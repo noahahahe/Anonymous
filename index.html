@@ -1,0 +1,2095 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+<title>代購總帳</title>
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="代購總帳" />
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%23161F2E'/%3E%3Ccircle cx='50' cy='50' r='30' fill='none' stroke='%23B23A2E' stroke-width='5'/%3E%3Ctext x='50' y='58' font-size='22' text-anchor='middle' fill='%23B23A2E' font-family='monospace' font-weight='700'%3E韓%3C/text%3E%3C/svg%3E" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%23161F2E'/%3E%3Ccircle cx='50' cy='50' r='30' fill='none' stroke='%23B23A2E' stroke-width='5'/%3E%3Ctext x='50' y='58' font-size='22' text-anchor='middle' fill='%23B23A2E' font-family='monospace' font-weight='700'%3E韓%3C/text%3E%3C/svg%3E" />
+<style>
+  html, body { margin: 0; padding: 0; background: #F6F3EC; overflow-x: hidden; }
+  #root { min-height: 100vh; }
+  #boot-loading {
+    position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+    background: #F6F3EC; font-family: -apple-system, sans-serif; color: #3A4658; font-size: 14px;
+    flex-direction: column; gap: 10px; z-index: 9999;
+  }
+  #boot-loading.hide { display: none; }
+  .boot-spinner {
+    width: 26px; height: 26px; border-radius: 50%;
+    border: 3px solid #D8D2BF; border-top-color: #B23A2E;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+<!-- React / ReactDOM (UMD 版本，經典 script 載入，不需要 ES Module 或 import map，
+     在 Safari 以檔案方式開啟時相容性最好) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js" crossorigin></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.24.7/babel.min.js"></script>
+</head>
+<body>
+<div id="root"></div>
+<div id="boot-loading"><div class="boot-spinner"></div><div>載入中…</div></div>
+
+<script type="text/plain" id="app-source">
+const { useState, useEffect, useCallback, useMemo } = React;
+
+/* ============================================================
+   內建圖示（取代 lucide-react，避免獨立版需要額外的 ES Module 相依）
+   ============================================================ */
+function Icon({ size = 20, color = "currentColor", strokeWidth = 2, style, children }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color}
+      strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" style={style}>
+      {children}
+    </svg>
+  );
+}
+const LayoutGrid = (p) => <Icon {...p}><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /></Icon>;
+const Package = (p) => <Icon {...p}><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" /><path d="M3.3 7 12 12l8.7-5" /><path d="M12 22V12" /></Icon>;
+const Layers = (p) => <Icon {...p}><path d="M12 2 2 7l10 5 10-5-10-5Z" /><path d="M2 17l10 5 10-5" /><path d="M2 12l10 5 10-5" /></Icon>;
+const Receipt = (p) => <Icon {...p}><path d="M4 2h16v20l-3-2-2 2-2-2-2 2-2-2-2 2-3-2Z" /><path d="M8 7h8" /><path d="M8 11h8" /><path d="M8 15h5" /></Icon>;
+const Scale = (p) => <Icon {...p}><path d="M12 3v18" /><path d="M5 7h14" /><path d="M5 7 3 12a2 2 0 0 0 4 0L5 7Z" /><path d="M19 7l-2 5a2 2 0 0 0 4 0l-2-5Z" /></Icon>;
+const Plus = (p) => <Icon {...p}><path d="M12 5v14M5 12h14" /></Icon>;
+const X = (p) => <Icon {...p}><path d="M18 6 6 18M6 6l12 12" /></Icon>;
+const Check = (p) => <Icon {...p}><path d="M20 6 9 17l-5-5" /></Icon>;
+const Pencil = (p) => <Icon {...p}><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" /></Icon>;
+const Trash2 = (p) => <Icon {...p}><path d="M3 6h18" /><path d="M8 6V4h8v2" /><path d="M19 6l-1 14H6L5 6" /><path d="M10 11v6" /><path d="M14 11v6" /></Icon>;
+const AlertTriangle = (p) => <Icon {...p}><path d="M10.3 3.9 1.8 18a1 1 0 0 0 .9 1.5h18.6a1 1 0 0 0 .9-1.5L13.7 3.9a1 1 0 0 0-1.7 0Z" /><path d="M12 9v4" /><path d="M12 17h.01" /></Icon>;
+const Stamp = (p) => <Icon {...p}><path d="M5 22h14" /><path d="M12 2a4 4 0 0 0-4 4c0 2 1 3 1 5H8l-2 5h12l-2-5h-1c0-2 1-3 1-5a4 4 0 0 0-4-4Z" /></Icon>;
+const TrendingUp = (p) => <Icon {...p}><path d="M22 7 13.5 15.5 8.5 10.5 2 17" /><path d="M16 7h6v6" /></Icon>;
+const TrendingDown = (p) => <Icon {...p}><path d="M22 17 13.5 8.5 8.5 13.5 2 7" /><path d="M16 17h6v-6" /></Icon>;
+const Search = (p) => <Icon {...p}><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></Icon>;
+const Loader2 = (p) => <Icon {...p}><path d="M21 12a9 9 0 1 1-6.219-8.56" /></Icon>;
+const Calendar = (p) => <Icon {...p}><path d="M8 2v4" /><path d="M16 2v4" /><path d="M3 10h18" /><rect x="3" y="4" width="18" height="18" rx="2" /></Icon>;
+const ChevronLeft = (p) => <Icon {...p}><path d="M15 18l-6-6 6-6" /></Icon>;
+const ChevronRight = (p) => <Icon {...p}><path d="M9 18l6-6-6-6" /></Icon>;
+
+/* ============================================================
+   설계 노트 / 設計筆記
+   主題：韓國代購的「物流清關」語彙 — 批次像貨櫃、訂單像託運單、
+   狀態像海關戳章。配色取自韓國國際快遞單與海關文件：
+   墨藍（主色）、牛皮紙白（底）、郵戳紅（強調／警示）、
+   艙位綠（完成／已到台）、關稅金（待處理）。
+   數字一律走等寬字體，模擬運單追蹤碼的質感。
+   ============================================================ */
+
+const TOKENS = {
+  ink: "#161F2E",
+  inkSoft: "#3A4658",
+  paper: "#F6F3EC",
+  paperDeep: "#EDE8DA",
+  line: "#D8D2BF",
+  stamp: "#B23A2E",
+  stampSoft: "#F1DDD8",
+  sage: "#3F6B52",
+  sageSoft: "#DCE7DE",
+  gold: "#B3812E",
+  goldSoft: "#F1E4CB",
+  white: "#FFFFFF",
+};
+
+const FONTS_IMPORT = `@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap');`;
+
+const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
+
+const DEFAULT_WEIGHTS = [
+  { id: uid(), category: "上衣", kg: 0.5 },
+  { id: uid(), category: "褲子", kg: 1.0 },
+  { id: uid(), category: "外套", kg: 0.8 },
+  { id: uid(), category: "帽子", kg: 0.3 },
+  { id: uid(), category: "包包", kg: 0.6 },
+  { id: uid(), category: "鞋子", kg: 1.2 },
+  { id: uid(), category: "配件/飾品", kg: 0.2 },
+  { id: uid(), category: "其他", kg: 0.5 },
+];
+
+const CALL_STATUS = ["未叫", "已叫"];
+const DEFAULT_ARRIVAL_STATUSES = [
+  { id: uid(), label: "品牌方未出貨", colorIndex: 0 },
+  { id: uid(), label: "已到韓國物流倉", colorIndex: 1 },
+  { id: uid(), label: "已到台", colorIndex: 2 },
+  { id: uid(), label: "斷貨", colorIndex: 3 },
+];
+const STATUS_PALETTE = [
+  { bg: TOKENS.line, fg: TOKENS.inkSoft },
+  { bg: TOKENS.goldSoft, fg: TOKENS.gold },
+  { bg: TOKENS.sageSoft, fg: TOKENS.sage },
+  { bg: TOKENS.stampSoft, fg: TOKENS.stamp },
+];
+function arrivalColorFor(label, statuses) {
+  const s = statuses.find(x => x.label === label);
+  const idx = s ? (s.colorIndex || 0) % STATUS_PALETTE.length : 0;
+  return STATUS_PALETTE[idx];
+}
+
+const EXPENSE_CATS = ["包材", "廣告", "淘宝", "運費", "其他"];
+
+const SCHEDULE_CATS = [
+  { key: "上架", color: TOKENS.sage, bg: TOKENS.sageSoft },
+  { key: "宣傳", color: TOKENS.stamp, bg: TOKENS.stampSoft },
+  { key: "叫貨/寄倉", color: TOKENS.gold, bg: TOKENS.goldSoft },
+  { key: "品牌活動", color: TOKENS.inkSoft, bg: TOKENS.paperDeep },
+  { key: "其他", color: TOKENS.inkSoft, bg: TOKENS.paperDeep },
+];
+const scheduleCatColor = (key) => SCHEDULE_CATS.find(c => c.key === key) || SCHEDULE_CATS[SCHEDULE_CATS.length - 1];
+
+// 品牌活動跨日反白用的螢光筆色票，依建立順序輪流指派
+const HIGHLIGHT_PALETTE = [
+  { bg: "#F5E28C", fg: "#6B5200" }, // 螢光黃
+  { bg: "#F3C6D9", fg: "#8A3358" }, // 螢光粉
+  { bg: "#BFE3C8", fg: "#2F6B45" }, // 螢光綠
+];
+const isBrandEvent = (ev) => ev.category === "品牌活動";
+function dateRangeArray(startISO, endISO) {
+  const out = [];
+  let d = new Date(startISO);
+  const end = new Date(endISO || startISO);
+  if (isNaN(d) || isNaN(end)) return out;
+  while (d <= end) {
+    out.push(d.toISOString().slice(0, 10));
+    d.setDate(d.getDate() + 1);
+  }
+  return out;
+}
+
+const WEEKDAYS = ["日", "一", "二", "三", "四", "五", "六"];
+
+function getMonthMatrix(year, month) {
+  const first = new Date(year, month, 1);
+  const startWeekday = first.getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const cells = [];
+  for (let i = 0; i < startWeekday; i++) cells.push(null);
+  for (let d = 1; d <= daysInMonth; d++) cells.push(d);
+  while (cells.length % 7 !== 0) cells.push(null);
+  const weeks = [];
+  for (let i = 0; i < cells.length; i += 7) weeks.push(cells.slice(i, i + 7));
+  return weeks;
+}
+function pad2(n) { return String(n).padStart(2, "0"); }
+function toISODate(year, month, day) { return `${year}-${pad2(month + 1)}-${pad2(day)}`; }
+
+
+function monthKey(dateStr) {
+  if (!dateStr) return "";
+  const d = new Date(dateStr);
+  if (isNaN(d)) return "";
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+}
+
+function fmt(n) {
+  const v = Number(n) || 0;
+  return v.toLocaleString("zh-TW", { maximumFractionDigits: 0 });
+}
+function fmt1(n) {
+  const v = Number(n) || 0;
+  return v.toLocaleString("zh-TW", { maximumFractionDigits: 1 });
+}
+
+/* ============================================================
+   儲存層 storage helpers
+   ============================================================ */
+async function loadKey(key, fallback) {
+  try {
+    const res = await window.storage.get(key, false);
+    if (res && res.value) return JSON.parse(res.value);
+    return fallback;
+  } catch (e) {
+    return fallback;
+  }
+}
+async function saveKey(key, value) {
+  try {
+    await window.storage.set(key, JSON.stringify(value), false);
+  } catch (e) {
+    console.error("storage save failed", key, e);
+  }
+}
+
+/* ============================================================
+   核心計算：批次成本 -> 單筆訂單成本
+   ============================================================ */
+function computeCost(order, batch) {
+  if (!batch) return null;
+  const price = Number(order.itemPriceKRW) || 0;
+  const weight = Number(order.weight) || 0;
+  const feePct = Number(batch.feePercent) || 0;
+  const shipPerKg = Number(batch.intlShipPerKg) || 0;
+  const customsPerKg = Number(batch.customsPerKgTWD) || 0;
+  const rate = Number(batch.exchangeRate) || 0;
+
+  const itemCostKRW = price * (1 + feePct / 100);
+  const intlShipKRW = shipPerKg * weight;
+  const subTWD = rate > 0 ? (itemCostKRW + intlShipKRW) / rate : 0;
+  const customsTWD = customsPerKg * weight;
+  const totalCostTWD = subTWD + customsTWD;
+  return {
+    itemCostKRW, intlShipKRW, subTWD, customsTWD, totalCostTWD,
+  };
+}
+
+function orderProfit(order, batch) {
+  const cost = computeCost(order, batch);
+  if (!cost) return null;
+  const sell = Number(order.sellPriceTWD) || 0;
+  const profit = sell - cost.totalCostTWD;
+  const marginPct = sell > 0 ? (profit / sell) * 100 : 0;
+  return { ...cost, sell, profit, marginPct };
+}
+
+
+/* ============================================================
+   小型共用元件
+   ============================================================ */
+function StampBadge({ label, size = 56 }) {
+  return (
+    <div
+      style={{
+        width: size, height: size, borderRadius: "50%",
+        border: `2px solid ${TOKENS.stamp}`,
+        color: TOKENS.stamp,
+        display: "flex", alignItems: "center", justifyContent: "center",
+        fontFamily: "'IBM Plex Mono', monospace",
+        fontWeight: 700, fontSize: size * 0.26,
+        transform: "rotate(-8deg)",
+        letterSpacing: "0.02em",
+        flexShrink: 0,
+        background: "repeating-linear-gradient(45deg, transparent, transparent 3px)",
+      }}
+    >
+      {label}
+    </div>
+  );
+}
+
+function Pill({ children, bg, fg, style }) {
+  return (
+    <span
+      style={{
+        display: "inline-flex", alignItems: "center", gap: 4,
+        padding: "3px 10px", borderRadius: 999,
+        background: bg, color: fg,
+        fontSize: 12, fontWeight: 600,
+        fontFamily: "'Inter', sans-serif",
+        whiteSpace: "nowrap",
+        ...style,
+      }}
+    >
+      {children}
+    </span>
+  );
+}
+
+function SectionLabel({ children }) {
+  return (
+    <div style={{
+      fontFamily: "'IBM Plex Mono', monospace",
+      fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase",
+      color: TOKENS.inkSoft, marginBottom: 6, opacity: 0.75,
+    }}>
+      {children}
+    </div>
+  );
+}
+
+function Field({ label, children, hint }) {
+  return (
+    <label style={{ display: "block", marginBottom: 14 }}>
+      <div style={{
+        fontSize: 12.5, fontWeight: 600, color: TOKENS.inkSoft, marginBottom: 5,
+        fontFamily: "'Inter', sans-serif",
+      }}>{label}</div>
+      {children}
+      {hint && <div style={{ fontSize: 11, color: TOKENS.inkSoft, opacity: 0.6, marginTop: 4 }}>{hint}</div>}
+    </label>
+  );
+}
+
+const inputStyle = {
+  width: "100%", boxSizing: "border-box",
+  padding: "10px 12px", borderRadius: 8,
+  border: `1.5px solid ${TOKENS.line}`,
+  background: TOKENS.white,
+  fontSize: 14.5, fontFamily: "'Inter', sans-serif",
+  color: TOKENS.ink, outline: "none",
+};
+
+function TextInput(props) {
+  return <input {...props} style={{ ...inputStyle, ...(props.style || {}) }} />;
+}
+function Select({ children, ...props }) {
+  return <select {...props} style={{ ...inputStyle, ...(props.style || {}) }}>{children}</select>;
+}
+
+function Button({ children, variant = "primary", style, ...props }) {
+  const variants = {
+    primary: { background: TOKENS.ink, color: TOKENS.paper, border: `1.5px solid ${TOKENS.ink}` },
+    stamp: { background: TOKENS.stamp, color: "#fff", border: `1.5px solid ${TOKENS.stamp}` },
+    ghost: { background: "transparent", color: TOKENS.ink, border: `1.5px solid ${TOKENS.line}` },
+    danger: { background: "transparent", color: TOKENS.stamp, border: `1.5px solid ${TOKENS.stampSoft}` },
+  };
+  return (
+    <button
+      {...props}
+      style={{
+        padding: "9px 16px", borderRadius: 8, fontSize: 13.5, fontWeight: 600,
+        cursor: "pointer", fontFamily: "'Inter', sans-serif",
+        display: "inline-flex", alignItems: "center", gap: 6,
+        transition: "opacity .15s",
+        ...variants[variant], ...style,
+      }}
+    >
+      {children}
+    </button>
+  );
+}
+
+function Modal({ title, onClose, children, wide }) {
+  return (
+    <div
+      style={{
+        position: "fixed", inset: 0, background: "rgba(22,31,46,0.5)",
+        display: "flex", alignItems: "flex-end", justifyContent: "center",
+        zIndex: 100,
+      }}
+      onClick={onClose}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          background: TOKENS.paper, width: "100%", maxWidth: wide ? 640 : 480,
+          maxHeight: "88vh", overflowY: "auto",
+          borderRadius: "18px 18px 0 0",
+          padding: "18px 18px 28px",
+          boxShadow: "0 -8px 30px rgba(0,0,0,0.2)",
+        }}
+      >
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+          <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 18, color: TOKENS.ink }}>
+            {title}
+          </div>
+          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", padding: 6 }}>
+            <X size={20} color={TOKENS.inkSoft} />
+          </button>
+        </div>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function EmptyState({ icon: Icon, title, desc }) {
+  return (
+    <div style={{
+      textAlign: "center", padding: "48px 20px", color: TOKENS.inkSoft,
+    }}>
+      <Icon size={32} strokeWidth={1.5} style={{ opacity: 0.4, marginBottom: 10 }} />
+      <div style={{ fontWeight: 600, fontSize: 14.5, marginBottom: 4 }}>{title}</div>
+      <div style={{ fontSize: 12.5, opacity: 0.75 }}>{desc}</div>
+    </div>
+  );
+}
+
+
+/* ============================================================
+   Dashboard
+   ============================================================ */
+function Dashboard({ orders, batches, expenses, setTab }) {
+  const batchMap = useMemo(() => Object.fromEntries(batches.map(b => [b.id, b])), [batches]);
+
+  const stats = useMemo(() => {
+    let revenue = 0, cost = 0, unpaid = 0, count = orders.length;
+    let pendingArrival = 0;
+    for (const o of orders) {
+      const b = batchMap[o.batchId];
+      const p = orderProfit(o, b);
+      if (p) { revenue += p.sell; cost += p.totalCostTWD; }
+      const due = (Number(o.sellPriceTWD) || 0) + (Number(o.shippingFeeToCustomer) || 0);
+      const paid = Number(o.paidAmount) || 0;
+      unpaid += Math.max(0, due - paid);
+      if (o.arrivalStatus !== "已到台") pendingArrival++;
+    }
+    const expenseTotal = expenses.reduce((s, e) => s + (Number(e.amount) || 0), 0);
+    const netProfit = revenue - cost - expenseTotal;
+    return { revenue, cost, unpaid, count, pendingArrival, expenseTotal, netProfit };
+  }, [orders, batchMap, expenses]);
+
+  const thisMonth = new Date().toISOString().slice(0, 7);
+  const monthOrders = orders.filter(o => monthKey(o.orderDate) === thisMonth);
+
+  const cards = [
+    { label: "本月訂單", value: monthOrders.length, unit: "筆", tab: "orders" },
+    { label: "待到貨/處理", value: stats.pendingArrival, unit: "筆", tab: "orders", warn: stats.pendingArrival > 0 },
+    { label: "未收款項", value: fmt(stats.unpaid), unit: "元", tab: "orders", warn: stats.unpaid > 0 },
+    { label: "累積淨利", value: fmt(stats.netProfit), unit: "元", tab: "summary" },
+  ];
+
+  return (
+    <div style={{ padding: "4px 4px 90px" }}>
+      <div style={{ marginBottom: 18 }}>
+        <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: TOKENS.stamp, letterSpacing: "0.1em", marginBottom: 2 }}>
+          MANIFEST · 貨運總覽
+        </div>
+        <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 24, color: TOKENS.ink }}>
+          代購總帳
+        </div>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 20 }}>
+        {cards.map((c, i) => (
+          <div
+            key={i}
+            onClick={() => setTab(c.tab)}
+            style={{
+              background: TOKENS.white, borderRadius: 12, padding: "14px 14px",
+              border: `1.5px solid ${c.warn ? TOKENS.stampSoft : TOKENS.line}`,
+              cursor: "pointer",
+            }}
+          >
+            <div style={{ fontSize: 11.5, color: TOKENS.inkSoft, fontWeight: 600, marginBottom: 6 }}>{c.label}</div>
+            <div style={{
+              fontFamily: "'IBM Plex Mono', monospace", fontWeight: 700, fontSize: 21,
+              color: c.warn ? TOKENS.stamp : TOKENS.ink,
+            }}>
+              {c.value}<span style={{ fontSize: 12, fontWeight: 500, marginLeft: 3 }}>{c.unit}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{
+        background: TOKENS.ink, borderRadius: 14, padding: "18px 16px", color: TOKENS.paper, marginBottom: 20,
+        position: "relative", overflow: "hidden",
+      }}>
+        <div style={{ fontSize: 12, opacity: 0.7, marginBottom: 10, fontWeight: 600 }}>本期損益摘要</div>
+        <Row label="營收（客人售價）" value={stats.revenue} />
+        <Row label="商品+物流成本" value={-stats.cost} />
+        <Row label="賣場支出（包材/廣告等）" value={-stats.expenseTotal} />
+        <div style={{ height: 1, background: "rgba(246,243,236,0.2)", margin: "10px 0" }} />
+        <Row label="淨利" value={stats.netProfit} bold />
+      </div>
+
+      <SectionLabel>近期批次</SectionLabel>
+      {batches.length === 0 ? (
+        <EmptyState icon={Layers} title="尚未建立批次" desc="先到「批次」建立本次寄送的匯率與運費設定" />
+      ) : (
+        <div style={{ display: "flex", gap: 10, overflowX: "auto", paddingBottom: 6 }}>
+          {batches.slice().reverse().slice(0, 6).map(b => {
+            const n = orders.filter(o => o.batchId === b.id).length;
+            return (
+              <div key={b.id} onClick={() => setTab("batches")} style={{
+                minWidth: 128, background: TOKENS.white, borderRadius: 12,
+                border: `1.5px solid ${TOKENS.line}`, padding: 12, cursor: "pointer",
+              }}>
+                <StampBadge label={b.label || "?"} size={40} />
+                <div style={{ marginTop: 8, fontSize: 11.5, color: TOKENS.inkSoft }}>{n} 筆訂單</div>
+                <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12.5, fontWeight: 600 }}>
+                  匯率 {b.exchangeRate || "-"}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Row({ label, value, bold }) {
+  const neg = value < 0;
+  return (
+    <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 0" }}>
+      <span style={{ fontSize: bold ? 14 : 13, opacity: bold ? 1 : 0.8, fontWeight: bold ? 700 : 400 }}>{label}</span>
+      <span style={{
+        fontFamily: "'IBM Plex Mono', monospace", fontSize: bold ? 16 : 13.5, fontWeight: bold ? 700 : 500,
+      }}>
+        {neg ? "-" : ""}{fmt(Math.abs(value))}
+      </span>
+    </div>
+  );
+}
+
+
+/* ============================================================
+   報價設定 + 報價計算
+   ============================================================ */
+function effectivePriceKRW(item, today) {
+  const hasSale = item.saleEnd && item.salePriceKRW;
+  if (hasSale) {
+    const t = new Date(today).setHours(0,0,0,0);
+    const e = new Date(item.saleEnd).setHours(0,0,0,0);
+    if (t <= e) return { price: Number(item.salePriceKRW), onSale: true };
+  }
+  return { price: Number(item.originalPriceKRW) || 0, onSale: false };
+}
+
+function discountLabel(originalKRW, saleKRW) {
+  const o = Number(originalKRW) || 0;
+  const s = Number(saleKRW) || 0;
+  if (o <= 0 || s <= 0) return "";
+  const off = (s / o) * 10;
+  return `${off.toFixed(1)}折`;
+}
+
+function computeQuote(item, quoteSettings, today) {
+  const { price, onSale } = effectivePriceKRW(item, today);
+  const rate = Number(quoteSettings.quoteRate) || 1;
+  const fixedFee = Number(quoteSettings.fixedFee) || 0;
+  const feePct = Number(quoteSettings.feePercent) || 0;
+  const shipPerKg = Number(quoteSettings.intlShipPerKg) || 0;
+  const domesticShipKRW = Number(quoteSettings.domesticShipKRW) || 0;
+  const weight = Number(item.weight) || 0;
+  const tiers = quoteSettings.tiers || [];
+  let mult = tiers.length ? tiers[tiers.length - 1].mult : 1;
+  for (const t of tiers) {
+    if (price < Number(t.under)) { mult = t.mult; break; }
+  }
+  const itemCostKRW = price * (1 + feePct / 100);
+  const shipKRW = shipPerKg * weight;
+  const costTWD = (itemCostKRW + shipKRW + domesticShipKRW) / rate;
+  const quote = costTWD * mult + fixedFee;
+  const profit = quote - costTWD;
+  const marginPct = quote > 0 ? (profit / quote) * 100 : 0;
+  const minMargin = Number(quoteSettings.minMarginPct) || 0;
+  const isLowMargin = marginPct < minMargin;
+  const suggestedQuote = minMargin < 100 ? costTWD / (1 - minMargin / 100) : null;
+  return { price, onSale, mult, itemCostKRW, costTWD, shipKRW, domesticShipKRW, quote, profit, marginPct, isLowMargin, suggestedQuote };
+}
+
+const DEFAULT_QUOTE_SETTINGS = {
+  quoteRate: 41,
+  fixedFee: 30,
+  feePercent: 3,
+  intlShipPerKg: 6200,
+  domesticShipKRW: 3000,
+  minMarginPct: 15,
+  tiers: [
+    { under: 20000, mult: 1.3 },
+    { under: 100000, mult: 1.2 },
+    { under: 999999999, mult: 1.15 },
+  ],
+};
+
+
+/* ============================================================
+   訂單管理 Orders
+   ============================================================ */
+function OrderForm({ initial, batches, weights, statuses, onSave, onCancel }) {
+  const [f, setF] = useState(initial || {
+    orderDate: new Date().toISOString().slice(0, 10),
+    customerName: "", contact: "LINE", lastFive: "",
+    itemDesc: "", category: weights[0]?.category || "其他",
+    weight: weights[0]?.kg || 0.5,
+    itemPriceKRW: "", batchId: batches[0]?.id || "",
+    callStatus: "未叫", arrivalStatus: statuses[0]?.label || "",
+    shippingFeeToCustomer: 60, sellPriceTWD: "", paidAmount: "",
+    recipientName: "", recipientPhone: "", cvsStore: "",
+    notes: "",
+  });
+
+  const batch = batches.find(b => b.id === f.batchId);
+  const cost = computeCost(f, batch);
+
+  const set = (k, v) => setF(prev => ({ ...prev, [k]: v }));
+
+  const onCategoryChange = (cat) => {
+    const w = weights.find(x => x.category === cat);
+    setF(prev => ({ ...prev, category: cat, weight: w ? w.kg : prev.weight }));
+  };
+
+  return (
+    <div>
+      <Field label="訂購日期">
+        <TextInput type="date" value={f.orderDate} onChange={e => set("orderDate", e.target.value)} />
+      </Field>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+        <Field label="客戶姓名">
+          <TextInput value={f.customerName} onChange={e => set("customerName", e.target.value)} placeholder="客戶稱呼" />
+        </Field>
+        <Field label="聯絡方式">
+          <Select value={f.contact} onChange={e => set("contact", e.target.value)}>
+            <option>LINE</option><option>IG</option><option>其他</option>
+          </Select>
+        </Field>
+      </div>
+      <Field label="匯款末五碼" hint="方便對帳">
+        <TextInput value={f.lastFive} onChange={e => set("lastFive", e.target.value)} placeholder="12345" />
+      </Field>
+      <Field label="訂單內容">
+        <TextInput value={f.itemDesc} onChange={e => set("itemDesc", e.target.value)} placeholder="例：Elf粉色連身裙" />
+      </Field>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+        <Field label="商品類別（帶入預設重量）">
+          <Select value={f.category} onChange={e => onCategoryChange(e.target.value)}>
+            {weights.map(w => <option key={w.id} value={w.category}>{w.category}</option>)}
+          </Select>
+        </Field>
+        <Field label="重量 (kg)">
+          <TextInput type="number" step="0.1" value={f.weight} onChange={e => set("weight", e.target.value)} />
+        </Field>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+        <Field label="商品韓幣金額">
+          <TextInput type="number" value={f.itemPriceKRW} onChange={e => set("itemPriceKRW", e.target.value)} placeholder="28000" />
+        </Field>
+        <Field label="對應批次">
+          <Select value={f.batchId} onChange={e => set("batchId", e.target.value)}>
+            <option value="">未指定</option>
+            {batches.map(b => <option key={b.id} value={b.id}>{b.label}</option>)}
+          </Select>
+        </Field>
+      </div>
+
+      {batch ? (
+        <div style={{
+          background: TOKENS.white, border: `1.5px solid ${TOKENS.line}`, borderRadius: 10,
+          padding: 12, marginBottom: 14, fontFamily: "'IBM Plex Mono', monospace", fontSize: 12.5,
+        }}>
+          <div style={{ fontFamily: "'Inter', sans-serif", fontWeight: 600, fontSize: 12, color: TOKENS.inkSoft, marginBottom: 6 }}>
+            成本試算（依批次 {batch.label} 參數，供對帳追蹤參考）
+          </div>
+          <CalcRow label="商品成本(含手續費)" v={`${fmt(cost.itemCostKRW)} 韓幣`} />
+          <CalcRow label="國際運費" v={`${fmt(cost.intlShipKRW)} 韓幣`} />
+          <CalcRow label="換算台幣小計" v={`${fmt1(cost.subTWD)} 元`} />
+          <CalcRow label="關稅" v={`${fmt1(cost.customsTWD)} 元`} />
+          <div style={{ height: 1, background: TOKENS.line, margin: "6px 0" }} />
+          <CalcRow label="總成本" v={`${fmt1(cost.totalCostTWD)} 元`} bold />
+        </div>
+      ) : (
+        <div style={{ fontSize: 12.5, color: TOKENS.stamp, marginBottom: 14 }}>
+          <AlertTriangle size={13} style={{ verticalAlign: -2, marginRight: 4 }} />
+          尚未選擇批次，無法試算成本
+        </div>
+      )}
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+        <Field label="叫貨狀態">
+          <Select value={f.callStatus} onChange={e => set("callStatus", e.target.value)}>
+            {CALL_STATUS.map(s => <option key={s}>{s}</option>)}
+          </Select>
+        </Field>
+        <Field label="貨物到倉狀態">
+          <Select value={f.arrivalStatus} onChange={e => set("arrivalStatus", e.target.value)}>
+            {statuses.map(s => <option key={s.id} value={s.label}>{s.label}</option>)}
+          </Select>
+        </Field>
+      </div>
+
+      <Field label="跟客人收的商品售價 (TWD)">
+        <TextInput type="number" value={f.sellPriceTWD} onChange={e => set("sellPriceTWD", e.target.value)} />
+      </Field>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+        <Field label="向客人收的運費 (TWD)">
+          <TextInput type="number" value={f.shippingFeeToCustomer} onChange={e => set("shippingFeeToCustomer", e.target.value)} />
+        </Field>
+        <Field label="已收款項 (TWD)">
+          <TextInput type="number" value={f.paidAmount} onChange={e => set("paidAmount", e.target.value)} />
+        </Field>
+      </div>
+
+      <SectionLabel>寄件資料</SectionLabel>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+        <Field label="收件人姓名">
+          <TextInput value={f.recipientName} onChange={e => set("recipientName", e.target.value)} />
+        </Field>
+        <Field label="收件人電話">
+          <TextInput value={f.recipientPhone} onChange={e => set("recipientPhone", e.target.value)} placeholder="09xx-xxx-xxx" />
+        </Field>
+      </div>
+      <Field label="7-11 / 超商門市名稱" hint="超商取貨用">
+        <TextInput value={f.cvsStore} onChange={e => set("cvsStore", e.target.value)} placeholder="例：happy門市" />
+      </Field>
+
+      <Field label="備註">
+        <TextInput value={f.notes} onChange={e => set("notes", e.target.value)} placeholder="其他特殊說明" />
+      </Field>
+
+      <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
+        <Button onClick={() => onSave(f)} style={{ flex: 1, justifyContent: "center" }}>
+          <Check size={15} /> 儲存訂單
+        </Button>
+        <Button variant="ghost" onClick={onCancel}>取消</Button>
+      </div>
+    </div>
+  );
+}
+
+function CalcRow({ label, v, bold, accent, negative }) {
+  return (
+    <div style={{ display: "flex", justifyContent: "space-between", padding: "2px 0" }}>
+      <span style={{ fontFamily: "'Inter', sans-serif", opacity: 0.75 }}>{label}</span>
+      <span style={{ fontWeight: bold ? 700 : 500, color: negative ? TOKENS.stamp : (accent ? TOKENS.sage : TOKENS.ink) }}>{v}</span>
+    </div>
+  );
+}
+
+function OrderCard({ order, batch, statuses, onEdit, onDelete }) {
+  const p = orderProfit(order, batch);
+  const due = (Number(order.sellPriceTWD) || 0) + (Number(order.shippingFeeToCustomer) || 0);
+  const paid = Number(order.paidAmount) || 0;
+  const unpaid = due - paid;
+  const arrivalC = arrivalColorFor(order.arrivalStatus, statuses);
+
+  return (
+    <div style={{
+      background: TOKENS.white, borderRadius: 12, border: `1.5px solid ${TOKENS.line}`,
+      padding: 13, marginBottom: 10,
+    }}>
+      <div style={{ display: "flex", gap: 10 }}>
+        {batch && <StampBadge label={batch.label} size={44} />}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+            <div>
+              <div style={{ fontWeight: 700, fontSize: 15, color: TOKENS.ink, fontFamily: "'Space Grotesk', sans-serif" }}>
+                {order.customerName || "（未命名客戶）"}
+              </div>
+              <div style={{ fontSize: 12.5, color: TOKENS.inkSoft, marginTop: 1 }}>{order.itemDesc || "—"}</div>
+            </div>
+            <div style={{ display: "flex", gap: 6 }}>
+              <button onClick={() => onEdit(order)} style={{ background: "none", border: "none", cursor: "pointer", padding: 4 }}>
+                <Pencil size={15} color={TOKENS.inkSoft} />
+              </button>
+              <button onClick={() => onDelete(order.id)} style={{ background: "none", border: "none", cursor: "pointer", padding: 4 }}>
+                <Trash2 size={15} color={TOKENS.stamp} />
+              </button>
+            </div>
+          </div>
+
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 8 }}>
+            <Pill bg={order.callStatus === "已叫" ? TOKENS.sageSoft : TOKENS.paperDeep} fg={order.callStatus === "已叫" ? TOKENS.sage : TOKENS.inkSoft}>
+              {order.callStatus}
+            </Pill>
+            <Pill bg={arrivalC.bg} fg={arrivalC.fg}>{order.arrivalStatus}</Pill>
+            {unpaid > 0 && <Pill bg={TOKENS.goldSoft} fg={TOKENS.gold}>未收 {fmt(unpaid)}</Pill>}
+          </div>
+
+          <div style={{
+            display: "flex", justifyContent: "space-between", marginTop: 10,
+            fontFamily: "'IBM Plex Mono', monospace", fontSize: 12.5,
+          }}>
+            <span style={{ color: TOKENS.inkSoft }}>成本 {p ? fmt1(p.totalCostTWD) : "—"}</span>
+            <span style={{ color: TOKENS.inkSoft }}>售價 {fmt(order.sellPriceTWD || 0)}</span>
+            <span style={{ color: p && p.profit >= 0 ? TOKENS.sage : TOKENS.stamp, fontWeight: 700 }}>
+              毛利 {p ? fmt1(p.profit) : "—"} {p ? `(${fmt1(p.marginPct)}%)` : ""}
+            </span>
+          </div>
+
+          {(order.recipientName || order.recipientPhone || order.cvsStore) && (
+            <div style={{ fontSize: 11.5, color: TOKENS.inkSoft, marginTop: 6, opacity: 0.85 }}>
+              寄件：{order.recipientName}{order.recipientPhone ? ` / ${order.recipientPhone}` : ""}{order.cvsStore ? ` / ${order.cvsStore}` : ""}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function StatusManageForm({ statuses, setStatuses }) {
+  const [newLabel, setNewLabel] = useState("");
+  const add = () => {
+    if (!newLabel.trim()) return;
+    setStatuses(prev => [...prev, { id: uid(), label: newLabel.trim(), colorIndex: prev.length % STATUS_PALETTE.length }]);
+    setNewLabel("");
+  };
+  const rename = (id, label) => setStatuses(prev => prev.map(s => s.id === id ? { ...s, label } : s));
+  const recolor = (id, colorIndex) => setStatuses(prev => prev.map(s => s.id === id ? { ...s, colorIndex } : s));
+  const remove = (id) => setStatuses(prev => prev.filter(s => s.id !== id));
+
+  return (
+    <div>
+      <div style={{ fontSize: 12.5, color: TOKENS.inkSoft, marginBottom: 14 }}>
+        自訂「貨物到倉狀態」的選項，可新增、改名、換顏色或刪除。已存在的訂單如果用到被刪掉的狀態，文字仍會保留，只是不會再有對應顏色。
+      </div>
+      {statuses.map(s => (
+        <div key={s.id} style={{
+          display: "flex", alignItems: "center", gap: 8, marginBottom: 8,
+          background: TOKENS.white, border: `1.5px solid ${TOKENS.line}`, borderRadius: 10, padding: 8,
+        }}>
+          <div style={{ display: "flex", gap: 4 }}>
+            {STATUS_PALETTE.map((c, i) => (
+              <button key={i} onClick={() => recolor(s.id, i)} style={{
+                width: 20, height: 20, borderRadius: "50%", background: c.bg, cursor: "pointer",
+                border: (s.colorIndex || 0) === i ? `2px solid ${TOKENS.ink}` : `2px solid transparent`,
+              }} />
+            ))}
+          </div>
+          <TextInput value={s.label} onChange={e => rename(s.id, e.target.value)} style={{ flex: 1, padding: "6px 10px", fontSize: 13 }} />
+          <button onClick={() => remove(s.id)} style={{ background: "none", border: "none", cursor: "pointer", padding: 4 }}>
+            <Trash2 size={15} color={TOKENS.stamp} />
+          </button>
+        </div>
+      ))}
+      <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+        <TextInput value={newLabel} onChange={e => setNewLabel(e.target.value)} placeholder="新增狀態名稱" style={{ flex: 1 }} />
+        <Button onClick={add}><Plus size={15} /> 新增</Button>
+      </div>
+    </div>
+  );
+}
+
+function OrdersView({ orders, setOrders, batches, weights, statuses, setStatuses }) {
+  const [modalOpen, setModalOpen] = useState(false);
+  const [statusModalOpen, setStatusModalOpen] = useState(false);
+  const [editing, setEditing] = useState(null);
+  const [search, setSearch] = useState("");
+  const [filterBatch, setFilterBatch] = useState("");
+  const [filterArrival, setFilterArrival] = useState("");
+
+  const batchMap = useMemo(() => Object.fromEntries(batches.map(b => [b.id, b])), [batches]);
+
+  const filtered = orders.filter(o => {
+    if (search && !(`${o.customerName}${o.itemDesc}${o.lastFive}`.toLowerCase().includes(search.toLowerCase()))) return false;
+    if (filterBatch && o.batchId !== filterBatch) return false;
+    if (filterArrival && o.arrivalStatus !== filterArrival) return false;
+    return true;
+  }).slice().sort((a, b) => (b.orderDate || "").localeCompare(a.orderDate || ""));
+
+  const openNew = () => { setEditing(null); setModalOpen(true); };
+  const openEdit = (o) => { setEditing(o); setModalOpen(true); };
+
+  const save = (f) => {
+    if (editing) {
+      setOrders(prev => prev.map(o => o.id === editing.id ? { ...f, id: editing.id } : o));
+    } else {
+      setOrders(prev => [...prev, { ...f, id: uid() }]);
+    }
+    setModalOpen(false);
+  };
+  const remove = (id) => setOrders(prev => prev.filter(o => o.id !== id));
+
+  return (
+    <div style={{ padding: "4px 4px 90px" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+        <div>
+          <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: TOKENS.stamp, letterSpacing: "0.1em" }}>
+            CONSIGNMENT · 訂單
+          </div>
+          <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 22, color: TOKENS.ink }}>
+            客戶訂單
+          </div>
+        </div>
+        <div style={{ display: "flex", gap: 8 }}>
+          <Button variant="ghost" onClick={() => setStatusModalOpen(true)}>狀態</Button>
+          <Button variant="stamp" onClick={openNew}><Plus size={16} /> 新增</Button>
+        </div>
+      </div>
+
+      <div style={{ position: "relative", marginBottom: 10 }}>
+        <Search size={15} color={TOKENS.inkSoft} style={{ position: "absolute", left: 11, top: 12 }} />
+        <TextInput
+          value={search} onChange={e => setSearch(e.target.value)}
+          placeholder="搜尋客戶姓名 / 商品 / 末五碼"
+          style={{ paddingLeft: 34 }}
+        />
+      </div>
+
+      <div style={{ display: "flex", gap: 8, marginBottom: 14, overflowX: "auto" }}>
+        <Select value={filterBatch} onChange={e => setFilterBatch(e.target.value)} style={{ width: "auto", minWidth: 110 }}>
+          <option value="">全部批次</option>
+          {batches.map(b => <option key={b.id} value={b.id}>{b.label}</option>)}
+        </Select>
+        <Select value={filterArrival} onChange={e => setFilterArrival(e.target.value)} style={{ width: "auto", minWidth: 110 }}>
+          <option value="">全部狀態</option>
+          {statuses.map(s => <option key={s.id} value={s.label}>{s.label}</option>)}
+        </Select>
+      </div>
+
+      {filtered.length === 0 ? (
+        <EmptyState icon={Package} title="還沒有訂單" desc="點右上角「新增」建立第一筆訂單" />
+      ) : (
+        filtered.map(o => (
+          <OrderCard key={o.id} order={o} batch={batchMap[o.batchId]} statuses={statuses} onEdit={openEdit} onDelete={remove} />
+        ))
+      )}
+
+      {modalOpen && (
+        <Modal title={editing ? "編輯訂單" : "新增訂單"} onClose={() => setModalOpen(false)}>
+          <OrderForm initial={editing} batches={batches} weights={weights} statuses={statuses} onSave={save} onCancel={() => setModalOpen(false)} />
+        </Modal>
+      )}
+      {statusModalOpen && (
+        <Modal title="管理貨物到倉狀態" onClose={() => setStatusModalOpen(false)}>
+          <StatusManageForm statuses={statuses} setStatuses={setStatuses} />
+        </Modal>
+      )}
+    </div>
+  );
+}
+
+
+/* ============================================================
+   批次成本設定 Batches
+   ============================================================ */
+function BatchForm({ initial, onSave, onCancel }) {
+  const [f, setF] = useState(initial || {
+    label: "", exchangeRate: "", intlShipPerKg: "", customsPerKgTWD: "", feePercent: 3,
+  });
+  const set = (k, v) => setF(prev => ({ ...prev, [k]: v }));
+  return (
+    <div>
+      <Field label="批次代號" hint="例：10-A、10-B（10月第一批/第二批）">
+        <TextInput value={f.label} onChange={e => set("label", e.target.value)} placeholder="10-A" />
+      </Field>
+      <Field label="批次匯率" hint="這批貨實際使用的韓幣兌台幣匯率">
+        <TextInput type="number" step="0.01" value={f.exchangeRate} onChange={e => set("exchangeRate", e.target.value)} placeholder="39" />
+      </Field>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+        <Field label="國際運費 / 公斤 (韓幣)">
+          <TextInput type="number" value={f.intlShipPerKg} onChange={e => set("intlShipPerKg", e.target.value)} placeholder="6200" />
+        </Field>
+        <Field label="關稅 / 公斤 (台幣)">
+          <TextInput type="number" value={f.customsPerKgTWD} onChange={e => set("customsPerKgTWD", e.target.value)} placeholder="35" />
+        </Field>
+      </div>
+      <Field label="代購手續費 (%)">
+        <TextInput type="number" step="0.1" value={f.feePercent} onChange={e => set("feePercent", e.target.value)} placeholder="3" />
+      </Field>
+      <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
+        <Button onClick={() => onSave(f)} style={{ flex: 1, justifyContent: "center" }}><Check size={15} /> 儲存批次</Button>
+        <Button variant="ghost" onClick={onCancel}>取消</Button>
+      </div>
+    </div>
+  );
+}
+
+function BatchesView({ batches, setBatches, orders }) {
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editing, setEditing] = useState(null);
+
+  const openNew = () => { setEditing(null); setModalOpen(true); };
+  const openEdit = (b) => { setEditing(b); setModalOpen(true); };
+  const save = (f) => {
+    if (editing) setBatches(prev => prev.map(b => b.id === editing.id ? { ...f, id: editing.id } : b));
+    else setBatches(prev => [...prev, { ...f, id: uid() }]);
+    setModalOpen(false);
+  };
+  const remove = (id) => {
+    const inUse = orders.some(o => o.batchId === id);
+    if (inUse && !window.confirm("此批次已有訂單使用，刪除後這些訂單將顯示「未指定批次」，確定刪除？")) return;
+    setBatches(prev => prev.filter(b => b.id !== id));
+  };
+
+  return (
+    <div style={{ padding: "4px 4px 90px" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+        <div>
+          <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: TOKENS.stamp, letterSpacing: "0.1em" }}>
+            CARGO LOT · 批次
+          </div>
+          <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 22, color: TOKENS.ink }}>
+            批次成本設定
+          </div>
+        </div>
+        <Button variant="stamp" onClick={openNew}><Plus size={16} /> 新增</Button>
+      </div>
+      <div style={{ fontSize: 12.5, color: TOKENS.inkSoft, marginBottom: 14, lineHeight: 1.5 }}>
+        每次從韓國（或淘寶）寄送就建立一個批次，填入該批的匯率、運費、關稅率——之後這批次下的所有訂單會自動套用這些參數計算成本。
+      </div>
+
+      {batches.length === 0 ? (
+        <EmptyState icon={Layers} title="尚未建立批次" desc="點右上角「新增」建立第一個批次" />
+      ) : (
+        batches.slice().reverse().map(b => {
+          const n = orders.filter(o => o.batchId === b.id).length;
+          return (
+            <div key={b.id} style={{
+              background: TOKENS.white, borderRadius: 12, border: `1.5px solid ${TOKENS.line}`,
+              padding: 13, marginBottom: 10, display: "flex", gap: 12,
+            }}>
+              <StampBadge label={b.label || "?"} size={48} />
+              <div style={{ flex: 1 }}>
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <div style={{ fontWeight: 700, fontFamily: "'Space Grotesk', sans-serif" }}>{n} 筆訂單</div>
+                  <div style={{ display: "flex", gap: 6 }}>
+                    <button onClick={() => openEdit(b)} style={{ background: "none", border: "none", cursor: "pointer" }}>
+                      <Pencil size={15} color={TOKENS.inkSoft} />
+                    </button>
+                    <button onClick={() => remove(b.id)} style={{ background: "none", border: "none", cursor: "pointer" }}>
+                      <Trash2 size={15} color={TOKENS.stamp} />
+                    </button>
+                  </div>
+                </div>
+                <div style={{
+                  display: "grid", gridTemplateColumns: "1fr 1fr", gap: "2px 12px",
+                  fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, color: TOKENS.inkSoft, marginTop: 6,
+                }}>
+                  <span>匯率 {b.exchangeRate || "-"}</span>
+                  <span>手續費 {b.feePercent || 0}%</span>
+                  <span>運費 {fmt(b.intlShipPerKg)}/kg₩</span>
+                  <span>關稅 {fmt(b.customsPerKgTWD)}/kg NT</span>
+                </div>
+              </div>
+            </div>
+          );
+        })
+      )}
+
+      {modalOpen && (
+        <Modal title={editing ? "編輯批次" : "新增批次"} onClose={() => setModalOpen(false)}>
+          <BatchForm initial={editing} onSave={save} onCancel={() => setModalOpen(false)} />
+        </Modal>
+      )}
+    </div>
+  );
+}
+
+
+/* ============================================================
+   重量預設 Weights
+   ============================================================ */
+function WeightsView({ weights, setWeights }) {
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editing, setEditing] = useState(null);
+  const [f, setF] = useState({ category: "", kg: "" });
+
+  const openNew = () => { setEditing(null); setF({ category: "", kg: "" }); setModalOpen(true); };
+  const openEdit = (w) => { setEditing(w); setF(w); setModalOpen(true); };
+  const save = () => {
+    if (!f.category) return;
+    if (editing) setWeights(prev => prev.map(w => w.id === editing.id ? { ...f, id: editing.id } : w));
+    else setWeights(prev => [...prev, { ...f, id: uid() }]);
+    setModalOpen(false);
+  };
+  const remove = (id) => setWeights(prev => prev.filter(w => w.id !== id));
+
+  return (
+    <div style={{ padding: "4px 4px 90px" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+        <div>
+          <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: TOKENS.stamp, letterSpacing: "0.1em" }}>
+            TARE WEIGHT · 重量
+          </div>
+          <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 22, color: TOKENS.ink }}>
+            商品重量預設
+          </div>
+        </div>
+        <Button variant="stamp" onClick={openNew}><Plus size={16} /> 新增</Button>
+      </div>
+      <div style={{ fontSize: 12.5, color: TOKENS.inkSoft, marginBottom: 14 }}>
+        新增訂單時選商品類別會自動帶入這裡的預設重量，特殊商品仍可手動覆蓋。
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+        {weights.map(w => (
+          <div key={w.id} style={{
+            background: TOKENS.white, borderRadius: 10, border: `1.5px solid ${TOKENS.line}`, padding: 12,
+            display: "flex", justifyContent: "space-between", alignItems: "center",
+          }}>
+            <div>
+              <div style={{ fontWeight: 600, fontSize: 13.5 }}>{w.category}</div>
+              <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 13, color: TOKENS.inkSoft }}>{w.kg} kg</div>
+            </div>
+            <div style={{ display: "flex", gap: 4 }}>
+              <button onClick={() => openEdit(w)} style={{ background: "none", border: "none", cursor: "pointer", padding: 3 }}>
+                <Pencil size={13} color={TOKENS.inkSoft} />
+              </button>
+              <button onClick={() => remove(w.id)} style={{ background: "none", border: "none", cursor: "pointer", padding: 3 }}>
+                <Trash2 size={13} color={TOKENS.stamp} />
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {modalOpen && (
+        <Modal title={editing ? "編輯類別" : "新增類別"} onClose={() => setModalOpen(false)}>
+          <Field label="商品類別"><TextInput value={f.category} onChange={e => setF({ ...f, category: e.target.value })} placeholder="例：洋裝" /></Field>
+          <Field label="預設重量 (kg)"><TextInput type="number" step="0.1" value={f.kg} onChange={e => setF({ ...f, kg: e.target.value })} /></Field>
+          <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
+            <Button onClick={save} style={{ flex: 1, justifyContent: "center" }}><Check size={15} /> 儲存</Button>
+            <Button variant="ghost" onClick={() => setModalOpen(false)}>取消</Button>
+          </div>
+        </Modal>
+      )}
+    </div>
+  );
+}
+
+/* ============================================================
+   支出流水帳 Expenses
+   ============================================================ */
+function ExpensesView({ expenses, setExpenses }) {
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editing, setEditing] = useState(null);
+  const [f, setF] = useState({ date: new Date().toISOString().slice(0,10), category: "包材", amount: "", note: "" });
+
+  const openNew = () => { setEditing(null); setF({ date: new Date().toISOString().slice(0,10), category: "包材", amount: "", note: "" }); setModalOpen(true); };
+  const openEdit = (e) => { setEditing(e); setF(e); setModalOpen(true); };
+  const save = () => {
+    if (editing) setExpenses(prev => prev.map(x => x.id === editing.id ? { ...f, id: editing.id } : x));
+    else setExpenses(prev => [...prev, { ...f, id: uid() }]);
+    setModalOpen(false);
+  };
+  const remove = (id) => setExpenses(prev => prev.filter(x => x.id !== id));
+
+  const grouped = useMemo(() => {
+    const g = {};
+    for (const e of expenses) {
+      const m = e.date ? e.date.slice(0, 7) : "未分類";
+      if (!g[m]) g[m] = [];
+      g[m].push(e);
+    }
+    return Object.entries(g).sort((a, b) => b[0].localeCompare(a[0]));
+  }, [expenses]);
+
+  return (
+    <div style={{ padding: "4px 4px 90px" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+        <div>
+          <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: TOKENS.stamp, letterSpacing: "0.1em" }}>
+            LEDGER · 支出
+          </div>
+          <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 22, color: TOKENS.ink }}>
+            賣場支出流水帳
+          </div>
+        </div>
+        <Button variant="stamp" onClick={openNew}><Plus size={16} /> 新增</Button>
+      </div>
+
+      {grouped.length === 0 ? (
+        <EmptyState icon={Receipt} title="還沒有支出紀錄" desc="記錄包材、廣告、淘寶等賣場經營成本" />
+      ) : grouped.map(([month, items]) => {
+        const total = items.reduce((s, x) => s + (Number(x.amount) || 0), 0);
+        return (
+          <div key={month} style={{ marginBottom: 18 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6, padding: "0 2px" }}>
+              <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontWeight: 700, fontSize: 13, color: TOKENS.ink }}>{month}</span>
+              <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 13, color: TOKENS.stamp, fontWeight: 700 }}>−{fmt(total)}</span>
+            </div>
+            {items.map(x => (
+              <div key={x.id} style={{
+                background: TOKENS.white, borderRadius: 10, border: `1.5px solid ${TOKENS.line}`,
+                padding: "10px 12px", marginBottom: 7, display: "flex", justifyContent: "space-between", alignItems: "center",
+              }}>
+                <div>
+                  <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                    <Pill bg={TOKENS.paperDeep} fg={TOKENS.inkSoft}>{x.category || "未分類"}</Pill>
+                    <span style={{ fontSize: 12, color: TOKENS.inkSoft }}>{x.date}</span>
+                  </div>
+                  <div style={{ fontSize: 13, marginTop: 3 }}>{x.note}</div>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontWeight: 700 }}>{fmt(x.amount)}</span>
+                  <button onClick={() => openEdit(x)} style={{ background: "none", border: "none", cursor: "pointer" }}>
+                    <Pencil size={13} color={TOKENS.inkSoft} />
+                  </button>
+                  <button onClick={() => remove(x.id)} style={{ background: "none", border: "none", cursor: "pointer" }}>
+                    <Trash2 size={13} color={TOKENS.stamp} />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        );
+      })}
+
+      {modalOpen && (
+        <Modal title={editing ? "編輯支出" : "新增支出"} onClose={() => setModalOpen(false)}>
+          <Field label="日期"><TextInput type="date" value={f.date} onChange={e => setF({ ...f, date: e.target.value })} /></Field>
+          <Field label="支出類別">
+            <Select value={f.category} onChange={e => setF({ ...f, category: e.target.value })}>
+              {EXPENSE_CATS.map(c => <option key={c}>{c}</option>)}
+            </Select>
+          </Field>
+          <Field label="支出金額"><TextInput type="number" value={f.amount} onChange={e => setF({ ...f, amount: e.target.value })} /></Field>
+          <Field label="備註"><TextInput value={f.note} onChange={e => setF({ ...f, note: e.target.value })} /></Field>
+          <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
+            <Button onClick={save} style={{ flex: 1, justifyContent: "center" }}><Check size={15} /> 儲存</Button>
+            <Button variant="ghost" onClick={() => setModalOpen(false)}>取消</Button>
+          </div>
+        </Modal>
+      )}
+    </div>
+  );
+}
+
+
+/* ============================================================
+   商品報價表 Quotes
+   ============================================================ */
+function QuoteSettingsForm({ settings, onSave, onCancel }) {
+  const [f, setF] = useState(JSON.parse(JSON.stringify(settings)));
+  const setTier = (i, k, v) => {
+    const tiers = f.tiers.slice();
+    tiers[i] = { ...tiers[i], [k]: v };
+    setF({ ...f, tiers });
+  };
+  return (
+    <div>
+      <Field label="報價匯率" hint="通常設得比物流實際匯率低一點，留緩衝空間">
+        <TextInput type="number" step="0.1" value={f.quoteRate} onChange={e => setF({ ...f, quoteRate: e.target.value })} />
+      </Field>
+      <Field label="代購/下單手續費 (%)" hint="算在商品成本裡，例：3 代表韓幣價格×1.03">
+        <TextInput type="number" step="0.1" value={f.feePercent} onChange={e => setF({ ...f, feePercent: e.target.value })} />
+      </Field>
+      <Field label="固定雜費 (台幣/每件)" hint="包材、小卡等每件都會用到的耗材">
+        <TextInput type="number" value={f.fixedFee} onChange={e => setF({ ...f, fixedFee: e.target.value })} />
+      </Field>
+      <Field label="國際運費 / 公斤 (韓幣)" hint="會依商品重量算入報價，可隨時調整">
+        <TextInput type="number" value={f.intlShipPerKg} onChange={e => setF({ ...f, intlShipPerKg: e.target.value })} />
+      </Field>
+      <Field label="韓國國內運費 (韓幣/每筆)" hint="品牌方寄到韓國物流倉的運費，預設每筆固定收一次">
+        <TextInput type="number" value={f.domesticShipKRW} onChange={e => setF({ ...f, domesticShipKRW: e.target.value })} />
+      </Field>
+      <Field label="最低毛利率警戒值 (%)" hint="低於這個毛利率會標示警示並給建議報價">
+        <TextInput type="number" value={f.minMarginPct} onChange={e => setF({ ...f, minMarginPct: e.target.value })} />
+      </Field>
+      <SectionLabel>價格級距乘數</SectionLabel>
+      {f.tiers.map((t, i) => (
+        <div key={i} style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 8 }}>
+          <Field label={i === f.tiers.length - 1 ? "以上皆用韓幣門檻" : `低於韓幣 (門檻 ${i+1})`}>
+            <TextInput type="number" value={t.under} onChange={e => setTier(i, "under", e.target.value)}
+              disabled={i === f.tiers.length - 1} />
+          </Field>
+          <Field label="乘數">
+            <TextInput type="number" step="0.01" value={t.mult} onChange={e => setTier(i, "mult", e.target.value)} />
+          </Field>
+        </div>
+      ))}
+      <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
+        <Button onClick={() => onSave(f)} style={{ flex: 1, justifyContent: "center" }}><Check size={15} /> 儲存設定</Button>
+        <Button variant="ghost" onClick={onCancel}>取消</Button>
+      </div>
+    </div>
+  );
+}
+
+function QuoteItemForm({ initial, onSave, onCancel }) {
+  const [f, setF] = useState(initial || {
+    brand: "", item: "", originalPriceKRW: "", salePriceKRW: "", saleEnd: "", weight: 0.5,
+  });
+  const set = (k, v) => setF(prev => ({ ...prev, [k]: v }));
+  const discount = discountLabel(f.originalPriceKRW, f.salePriceKRW);
+  return (
+    <div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+        <Field label="品牌"><TextInput value={f.brand} onChange={e => set("brand", e.target.value)} /></Field>
+        <Field label="品項"><TextInput value={f.item} onChange={e => set("item", e.target.value)} placeholder="例：外套" /></Field>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+        <Field label="韓幣原價"><TextInput type="number" value={f.originalPriceKRW} onChange={e => set("originalPriceKRW", e.target.value)} /></Field>
+        <Field label="重量 (kg)" hint="用於算國際運費"><TextInput type="number" step="0.1" value={f.weight} onChange={e => set("weight", e.target.value)} /></Field>
+      </div>
+      <SectionLabel>特價設定（選填）</SectionLabel>
+      <Field label="韓幣特價" hint={discount ? `自動換算：約 ${discount}` : undefined}>
+        <TextInput type="number" value={f.salePriceKRW} onChange={e => set("salePriceKRW", e.target.value)} />
+      </Field>
+      <Field label="結束日期" hint="特價從現在起生效，到這天結束；過了自動變回原價">
+        <TextInput type="date" value={f.saleEnd} onChange={e => set("saleEnd", e.target.value)} />
+      </Field>
+      <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
+        <Button onClick={() => onSave(f)} style={{ flex: 1, justifyContent: "center" }}><Check size={15} /> 儲存商品</Button>
+        <Button variant="ghost" onClick={onCancel}>取消</Button>
+      </div>
+    </div>
+  );
+}
+
+function QuotesView({ items, setItems, quoteSettings, setQuoteSettings }) {
+  const [modalOpen, setModalOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [editing, setEditing] = useState(null);
+  const [activeBrand, setActiveBrand] = useState("__all__");
+  const today = new Date().toISOString().slice(0, 10);
+
+  const openNew = () => { setEditing(null); setModalOpen(true); };
+  const openEdit = (it) => { setEditing(it); setModalOpen(true); };
+  const save = (f) => {
+    if (editing) setItems(prev => prev.map(x => x.id === editing.id ? { ...f, id: editing.id } : x));
+    else setItems(prev => [...prev, { ...f, id: uid() }]);
+    setModalOpen(false);
+  };
+  const remove = (id) => setItems(prev => prev.filter(x => x.id !== id));
+
+  const brandList = useMemo(() => {
+    const s = new Set(items.map(it => it.brand || "未分類品牌"));
+    return Array.from(s).sort((a, b) => a.localeCompare(b));
+  }, [items]);
+
+  const grouped = useMemo(() => {
+    const g = {};
+    for (const it of items) {
+      const b = it.brand || "未分類品牌";
+      if (activeBrand !== "__all__" && b !== activeBrand) continue;
+      if (!g[b]) g[b] = [];
+      g[b].push(it);
+    }
+    return Object.entries(g).sort((a, b) => a[0].localeCompare(b[0]));
+  }, [items, activeBrand]);
+
+  return (
+    <div style={{ padding: "4px 4px 90px" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+        <div>
+          <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: TOKENS.stamp, letterSpacing: "0.1em" }}>
+            TARIFF SHEET · 報價
+          </div>
+          <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 22, color: TOKENS.ink }}>
+            商品報價表
+          </div>
+        </div>
+        <div style={{ display: "flex", gap: 8 }}>
+          <Button variant="ghost" onClick={() => setSettingsOpen(true)}>參數</Button>
+          <Button variant="stamp" onClick={openNew}><Plus size={16} /> 新增</Button>
+        </div>
+      </div>
+
+      <div style={{
+        background: TOKENS.white, border: `1.5px solid ${TOKENS.line}`, borderRadius: 10, padding: 12, marginBottom: 12,
+        fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, color: TOKENS.inkSoft,
+      }}>
+        報價匯率 <b style={{ color: TOKENS.ink }}>{quoteSettings.quoteRate}</b>　
+        手續費 <b style={{ color: TOKENS.ink }}>{quoteSettings.feePercent}%</b>　
+        固定雜費 <b style={{ color: TOKENS.ink }}>{quoteSettings.fixedFee}</b>　
+        運費 <b style={{ color: TOKENS.ink }}>{fmt(quoteSettings.intlShipPerKg)}/kg₩</b>　
+        國內運 <b style={{ color: TOKENS.ink }}>{fmt(quoteSettings.domesticShipKRW)}₩</b>　
+        乘數 <b style={{ color: TOKENS.ink }}>{quoteSettings.tiers.map(t => t.mult).join(" / ")}</b>　
+        警戒毛利 <b style={{ color: TOKENS.ink }}>{quoteSettings.minMarginPct}%</b>
+      </div>
+
+      {brandList.length > 0 && (
+        <div style={{ display: "flex", gap: 6, overflowX: "auto", marginBottom: 16, paddingBottom: 2 }}>
+          <button
+            onClick={() => setActiveBrand("__all__")}
+            style={{
+              flexShrink: 0, padding: "7px 14px", borderRadius: 999, fontSize: 12.5, fontWeight: 600,
+              cursor: "pointer", fontFamily: "'Inter', sans-serif",
+              border: `1.5px solid ${activeBrand === "__all__" ? TOKENS.ink : TOKENS.line}`,
+              background: activeBrand === "__all__" ? TOKENS.ink : TOKENS.white,
+              color: activeBrand === "__all__" ? TOKENS.paper : TOKENS.inkSoft,
+            }}
+          >全部</button>
+          {brandList.map(b => (
+            <button
+              key={b}
+              onClick={() => setActiveBrand(b)}
+              style={{
+                flexShrink: 0, padding: "7px 14px", borderRadius: 999, fontSize: 12.5, fontWeight: 600,
+                cursor: "pointer", fontFamily: "'Inter', sans-serif",
+                border: `1.5px solid ${activeBrand === b ? TOKENS.ink : TOKENS.line}`,
+                background: activeBrand === b ? TOKENS.ink : TOKENS.white,
+                color: activeBrand === b ? TOKENS.paper : TOKENS.inkSoft,
+              }}
+            >{b}</button>
+          ))}
+        </div>
+      )}
+
+      {grouped.length === 0 ? (
+        <EmptyState icon={Stamp} title="還沒有商品報價" desc="依品牌新增商品，特價期間內會自動顯示特價並反紅" />
+      ) : grouped.map(([brand, list]) => (
+        <div key={brand} style={{ marginBottom: 18 }}>
+          <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 15, marginBottom: 8, color: TOKENS.ink }}>
+            {brand}
+          </div>
+          {list.map(it => {
+            const q = computeQuote(it, quoteSettings, today);
+            return (
+              <div key={it.id} style={{
+                background: TOKENS.white, borderRadius: 10, border: `1.5px solid ${q.onSale ? TOKENS.stampSoft : TOKENS.line}`,
+                padding: "10px 12px", marginBottom: 7,
+              }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                  <div>
+                    <div style={{ fontWeight: 600, fontSize: 13.5 }}>{it.item || "（未命名品項）"}</div>
+                    <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, color: TOKENS.inkSoft, marginTop: 2 }}>
+                      {q.onSale ? (
+                        <>
+                          <span style={{ textDecoration: "line-through", opacity: 0.6 }}>{fmt(it.originalPriceKRW)}</span>
+                          {" "}
+                          <span style={{ color: TOKENS.stamp, fontWeight: 700 }}>{fmt(it.salePriceKRW)} 韓幣</span>
+                          {discountLabel(it.originalPriceKRW, it.salePriceKRW) && (
+                            <Pill bg={TOKENS.stampSoft} fg={TOKENS.stamp} style={{ marginLeft: 6 }}>
+                              {discountLabel(it.originalPriceKRW, it.salePriceKRW)}
+                            </Pill>
+                          )}
+                        </>
+                      ) : (
+                        <span>{fmt(it.originalPriceKRW)} 韓幣</span>
+                      )}
+                    </div>
+                    {it.saleEnd && (
+                      <div style={{ fontSize: 11, color: q.onSale ? TOKENS.stamp : TOKENS.inkSoft, marginTop: 2 }}>
+                        {q.onSale ? `特價至 ${it.saleEnd}` : `特價已過期（${it.saleEnd}），顯示原價`}
+                      </div>
+                    )}
+                    <div style={{ fontSize: 11, color: TOKENS.inkSoft, opacity: 0.75, marginTop: 2 }}>
+                      {it.weight || 0}kg・運費 {fmt(q.shipKRW)}韓幣・級距×{q.mult}
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", gap: 4 }}>
+                    <button onClick={() => openEdit(it)} style={{ background: "none", border: "none", cursor: "pointer", padding: 3 }}>
+                      <Pencil size={13} color={TOKENS.inkSoft} />
+                    </button>
+                    <button onClick={() => remove(it.id)} style={{ background: "none", border: "none", cursor: "pointer", padding: 3 }}>
+                      <Trash2 size={13} color={TOKENS.stamp} />
+                    </button>
+                  </div>
+                </div>
+                <div style={{
+                  marginTop: 8, display: "flex", justifyContent: "space-between", alignItems: "center",
+                  background: q.onSale ? TOKENS.stampSoft : TOKENS.paperDeep, borderRadius: 8, padding: "6px 10px",
+                }}>
+                  <span style={{ fontSize: 11.5, color: q.onSale ? TOKENS.stamp : TOKENS.inkSoft, fontWeight: 600 }}>今日報價</span>
+                  <span style={{
+                    fontFamily: "'IBM Plex Mono', monospace", fontWeight: 700, fontSize: 15,
+                    color: q.onSale ? TOKENS.stamp : TOKENS.ink,
+                  }}>
+                    NT$ {fmt(q.quote)}
+                  </span>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 6, padding: "0 2px" }}>
+                  <span style={{ fontSize: 11, color: TOKENS.inkSoft }}>
+                    成本約 {fmt1(q.costTWD)} 元・利潤 {fmt1(q.profit)} 元
+                  </span>
+                  <Pill bg={q.isLowMargin ? TOKENS.stampSoft : TOKENS.sageSoft} fg={q.isLowMargin ? TOKENS.stamp : TOKENS.sage}>
+                    毛利率 {fmt1(q.marginPct)}%
+                  </Pill>
+                </div>
+                {q.isLowMargin && (
+                  <div style={{
+                    marginTop: 6, display: "flex", justifyContent: "space-between", alignItems: "center",
+                    background: TOKENS.stampSoft, borderRadius: 8, padding: "6px 10px",
+                  }}>
+                    <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: TOKENS.stamp, fontWeight: 600 }}>
+                      <AlertTriangle size={12} /> 毛利率低於警戒值，建議報價
+                    </span>
+                    <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontWeight: 700, fontSize: 13, color: TOKENS.stamp }}>
+                      NT$ {fmt(q.suggestedQuote)}
+                    </span>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      ))}
+
+      {modalOpen && (
+        <Modal title={editing ? "編輯商品" : "新增商品"} onClose={() => setModalOpen(false)}>
+          <QuoteItemForm initial={editing} onSave={save} onCancel={() => setModalOpen(false)} />
+        </Modal>
+      )}
+      {settingsOpen && (
+        <Modal title="報價參數設定" onClose={() => setSettingsOpen(false)}>
+          <QuoteSettingsForm settings={quoteSettings} onSave={(s) => { setQuoteSettings(s); setSettingsOpen(false); }} onCancel={() => setSettingsOpen(false)} />
+        </Modal>
+      )}
+    </div>
+  );
+}
+
+
+/* ============================================================
+   收支總結 Summary
+   ============================================================ */
+function SummaryView({ orders, batches, expenses }) {
+  const batchMap = useMemo(() => Object.fromEntries(batches.map(b => [b.id, b])), [batches]);
+
+  const monthly = useMemo(() => {
+    const m = {};
+    for (const o of orders) {
+      const k = monthKey(o.orderDate) || "未分類";
+      if (!m[k]) m[k] = { revenue: 0, cost: 0, expense: 0, count: 0 };
+      const p = orderProfit(o, batchMap[o.batchId]);
+      if (p) { m[k].revenue += p.sell; m[k].cost += p.totalCostTWD; }
+      m[k].count++;
+    }
+    for (const e of expenses) {
+      const k = e.date ? e.date.slice(0, 7) : "未分類";
+      if (!m[k]) m[k] = { revenue: 0, cost: 0, expense: 0, count: 0 };
+      m[k].expense += Number(e.amount) || 0;
+    }
+    return Object.entries(m).sort((a, b) => b[0].localeCompare(a[0]));
+  }, [orders, expenses, batchMap]);
+
+  const grand = monthly.reduce((s, [, v]) => ({
+    revenue: s.revenue + v.revenue, cost: s.cost + v.cost, expense: s.expense + v.expense,
+  }), { revenue: 0, cost: 0, expense: 0 });
+  const grandNet = grand.revenue - grand.cost - grand.expense;
+
+  return (
+    <div style={{ padding: "4px 4px 90px" }}>
+      <div style={{ marginBottom: 18 }}>
+        <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: TOKENS.stamp, letterSpacing: "0.1em" }}>
+          BALANCE · 損益
+        </div>
+        <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 22, color: TOKENS.ink }}>
+          整體收支總結
+        </div>
+      </div>
+
+      <div style={{
+        background: TOKENS.ink, borderRadius: 14, padding: "18px 16px", color: TOKENS.paper, marginBottom: 22,
+      }}>
+        <div style={{ fontSize: 12, opacity: 0.7, marginBottom: 10, fontWeight: 600 }}>累積至今</div>
+        <Row label="總營收" value={grand.revenue} />
+        <Row label="商品+物流成本" value={-grand.cost} />
+        <Row label="賣場支出" value={-grand.expense} />
+        <div style={{ height: 1, background: "rgba(246,243,236,0.2)", margin: "10px 0" }} />
+        <Row label="淨利" value={grandNet} bold />
+        {grandNet >= 0 ? (
+          <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11.5, opacity: 0.75, marginTop: 8 }}>
+            <TrendingUp size={13} /> 目前整體獲利
+          </div>
+        ) : (
+          <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11.5, opacity: 0.75, marginTop: 8, color: "#E8A9A2" }}>
+            <TrendingDown size={13} /> 目前整體虧損
+          </div>
+        )}
+      </div>
+
+      <SectionLabel>按月份</SectionLabel>
+      {monthly.length === 0 ? (
+        <EmptyState icon={Receipt} title="還沒有資料" desc="新增訂單與支出後這裡會自動彙總" />
+      ) : monthly.map(([month, v]) => {
+        const net = v.revenue - v.cost - v.expense;
+        return (
+          <div key={month} style={{
+            background: TOKENS.white, borderRadius: 12, border: `1.5px solid ${TOKENS.line}`,
+            padding: 13, marginBottom: 10,
+          }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+              <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 15 }}>{month}</span>
+              <span style={{
+                fontFamily: "'IBM Plex Mono', monospace", fontWeight: 700, fontSize: 15,
+                color: net >= 0 ? TOKENS.sage : TOKENS.stamp,
+              }}>{net >= 0 ? "+" : "-"}{fmt(Math.abs(net))}</span>
+            </div>
+            <div style={{
+              display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 6,
+              fontFamily: "'IBM Plex Mono', monospace", fontSize: 11.5, color: TOKENS.inkSoft,
+            }}>
+              <div>營收<br /><b style={{ color: TOKENS.ink, fontSize: 13 }}>{fmt(v.revenue)}</b></div>
+              <div>成本<br /><b style={{ color: TOKENS.ink, fontSize: 13 }}>{fmt(v.cost)}</b></div>
+              <div>支出<br /><b style={{ color: TOKENS.ink, fontSize: 13 }}>{fmt(v.expense)}</b></div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+
+/* ============================================================
+   行程表 Schedule / Calendar
+   ============================================================ */
+function ScheduleEventForm({ initial, defaultDate, brandEventCount, onSave, onCancel }) {
+  const [f, setF] = useState(initial || {
+    date: defaultDate, endDate: defaultDate, title: "", category: "上架", note: "",
+  });
+  const set = (k, v) => setF(prev => ({ ...prev, [k]: v }));
+  const isBrand = f.category === "品牌活動";
+
+  const handleSave = () => {
+    const out = { ...f };
+    if (!out.endDate || out.endDate < out.date) out.endDate = out.date;
+    if (isBrand && out.colorIndex === undefined) out.colorIndex = (brandEventCount || 0) % HIGHLIGHT_PALETTE.length;
+    onSave(out);
+  };
+
+  return (
+    <div>
+      <Field label="開始日期">
+        <TextInput type="date" value={f.date} onChange={e => set("date", e.target.value)} />
+      </Field>
+      <Field label="結束日期" hint={isBrand ? "例：Bonnae換季特價 8/8–8/23" : "單日活動可留跟開始日期一樣"}>
+        <TextInput type="date" value={f.endDate} onChange={e => set("endDate", e.target.value)} />
+      </Field>
+      <Field label="標題">
+        <TextInput value={f.title} onChange={e => set("title", e.target.value)} placeholder="例：Grumpy stuff 上架" />
+      </Field>
+      <Field label="分類">
+        <Select value={f.category} onChange={e => set("category", e.target.value)}>
+          {SCHEDULE_CATS.map(c => <option key={c.key} value={c.key}>{c.key}</option>)}
+        </Select>
+      </Field>
+      {isBrand && (
+        <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
+          {HIGHLIGHT_PALETTE.map((c, i) => (
+            <button
+              key={i}
+              type="button"
+              onClick={() => set("colorIndex", i)}
+              style={{
+                width: 32, height: 32, borderRadius: 8, background: c.bg, cursor: "pointer",
+                border: (f.colorIndex ?? ((brandEventCount || 0) % HIGHLIGHT_PALETTE.length)) === i
+                  ? `2px solid ${TOKENS.ink}` : `2px solid transparent`,
+              }}
+            />
+          ))}
+        </div>
+      )}
+      <Field label="備註">
+        <TextInput value={f.note} onChange={e => set("note", e.target.value)} placeholder="細節、連結、提醒事項" />
+      </Field>
+      <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
+        <Button onClick={handleSave} style={{ flex: 1, justifyContent: "center" }}><Check size={15} /> 儲存</Button>
+        <Button variant="ghost" onClick={onCancel}>取消</Button>
+      </div>
+    </div>
+  );
+}
+
+function ScheduleView({ events, setEvents }) {
+  const now = new Date();
+  const [year, setYear] = useState(now.getFullYear());
+  const [month, setMonth] = useState(now.getMonth()); // 0-indexed
+  const [dayModal, setDayModal] = useState(null); // ISO date string
+  const [formOpen, setFormOpen] = useState(false);
+  const [editing, setEditing] = useState(null);
+
+  const todayISO = now.toISOString().slice(0, 10);
+  const weeks = useMemo(() => getMonthMatrix(year, month), [year, month]);
+
+  const eventsByDate = useMemo(() => {
+    const m = {};
+    for (const e of events) {
+      if (!e.date) continue;
+      const days = dateRangeArray(e.date, e.endDate || e.date);
+      for (const iso of days) {
+        if (!m[iso]) m[iso] = [];
+        m[iso].push(e);
+      }
+    }
+    return m;
+  }, [events]);
+
+  const monthEvents = useMemo(() => {
+    const prefix = `${year}-${pad2(month + 1)}`;
+    const monthStart = `${prefix}-01`;
+    const monthEnd = `${prefix}-31`;
+    return events.filter(e => {
+      const s = e.date || "";
+      const en = e.endDate || e.date || "";
+      return en >= monthStart && s <= monthEnd;
+    }).slice().sort((a, b) => a.date.localeCompare(b.date));
+  }, [events, year, month]);
+
+  const brandEventCount = useMemo(() => events.filter(isBrandEvent).length, [events]);
+
+  const goPrev = () => { if (month === 0) { setYear(y => y - 1); setMonth(11); } else setMonth(m => m - 1); };
+  const goNext = () => { if (month === 11) { setYear(y => y + 1); setMonth(0); } else setMonth(m => m + 1); };
+  const goToday = () => { setYear(now.getFullYear()); setMonth(now.getMonth()); };
+
+  const openDay = (iso) => setDayModal(iso);
+  const openNewEvent = (iso) => { setEditing(null); setFormOpen(true); setDayModal(null); setPendingDate(iso); };
+  const [pendingDate, setPendingDate] = useState(todayISO);
+  const openEditEvent = (ev) => { setEditing(ev); setFormOpen(true); setDayModal(null); };
+
+  const save = (f) => {
+    if (editing) setEvents(prev => prev.map(e => e.id === editing.id ? { ...f, id: editing.id } : e));
+    else setEvents(prev => [...prev, { ...f, id: uid() }]);
+    setFormOpen(false);
+  };
+  const remove = (id) => setEvents(prev => prev.filter(e => e.id !== id));
+
+  return (
+    <div style={{ padding: "4px 4px 90px" }}>
+      <div style={{ marginBottom: 14 }}>
+        <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: TOKENS.stamp, letterSpacing: "0.1em" }}>
+          SCHEDULE · 行程
+        </div>
+        <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 22, color: TOKENS.ink }}>
+          上架 / 宣傳行程表
+        </div>
+      </div>
+
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+        <button onClick={goPrev} style={{ background: "none", border: "none", cursor: "pointer", padding: 6 }}>
+          <ChevronLeft size={20} color={TOKENS.ink} />
+        </button>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 17 }}>
+            {year}年{month + 1}月
+          </span>
+          <button onClick={goToday} style={{
+            fontSize: 11, fontWeight: 600, color: TOKENS.inkSoft, background: TOKENS.paperDeep,
+            border: "none", borderRadius: 6, padding: "3px 8px", cursor: "pointer",
+          }}>今天</button>
+        </div>
+        <button onClick={goNext} style={{ background: "none", border: "none", cursor: "pointer", padding: 6 }}>
+          <ChevronRight size={20} color={TOKENS.ink} />
+        </button>
+      </div>
+
+      <div style={{ display: "flex", gap: 10, marginBottom: 10, flexWrap: "wrap" }}>
+        {SCHEDULE_CATS.map(c => (
+          <div key={c.key} style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: TOKENS.inkSoft }}>
+            <span style={{ width: 7, height: 7, borderRadius: "50%", background: c.color, display: "inline-block" }} />
+            {c.key}
+          </div>
+        ))}
+      </div>
+
+      <div style={{
+        background: TOKENS.white, borderRadius: 12, border: `1.5px solid ${TOKENS.line}`,
+        overflow: "hidden", marginBottom: 20,
+      }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", background: TOKENS.ink }}>
+          {WEEKDAYS.map(w => (
+            <div key={w} style={{ textAlign: "center", padding: "6px 0", color: TOKENS.paper, fontSize: 11.5, fontWeight: 600 }}>
+              {w}
+            </div>
+          ))}
+        </div>
+        {weeks.map((week, wi) => (
+          <div key={wi} style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)" }}>
+            {week.map((day, di) => {
+              if (day === null) return <div key={di} style={{ minHeight: 54, borderRight: di < 6 ? `1px solid ${TOKENS.line}` : "none", borderTop: `1px solid ${TOKENS.line}` }} />;
+              const iso = toISODate(year, month, day);
+              const isToday = iso === todayISO;
+              const dayEvents = eventsByDate[iso] || [];
+              const brandEv = dayEvents.find(isBrandEvent);
+              const dotEvents = dayEvents.filter(ev => !isBrandEvent(ev));
+              const hc = brandEv ? HIGHLIGHT_PALETTE[(brandEv.colorIndex || 0) % HIGHLIGHT_PALETTE.length] : null;
+              const isStart = brandEv && brandEv.date === iso;
+              return (
+                <div
+                  key={di}
+                  onClick={() => openDay(iso)}
+                  style={{
+                    minHeight: 54, padding: "4px 3px",
+                    borderRight: di < 6 ? `1px solid ${TOKENS.line}` : "none",
+                    borderTop: `1px solid ${TOKENS.line}`,
+                    cursor: "pointer",
+                    background: hc ? hc.bg : (isToday ? TOKENS.goldSoft : "transparent"),
+                    position: "relative",
+                  }}
+                >
+                  <div style={{
+                    fontFamily: "'IBM Plex Mono', monospace", fontSize: 11.5, fontWeight: isToday ? 700 : 500,
+                    color: isToday ? TOKENS.gold : (hc ? hc.fg : TOKENS.ink), marginBottom: 3,
+                  }}>{day}</div>
+                  {isStart && (
+                    <div style={{
+                      fontSize: 9, fontWeight: 700, color: hc.fg,
+                      whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", marginBottom: 2,
+                    }}>{brandEv.title}</div>
+                  )}
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
+                    {dotEvents.slice(0, 4).map(ev => (
+                      <span key={ev.id} style={{
+                        width: 6, height: 6, borderRadius: "50%",
+                        background: scheduleCatColor(ev.category).color, display: "inline-block",
+                      }} />
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ))}
+      </div>
+
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+        <SectionLabel>本月事項（{monthEvents.length}）</SectionLabel>
+        <Button variant="stamp" onClick={() => openNewEvent(todayISO)}><Plus size={14} /> 新增</Button>
+      </div>
+
+      {monthEvents.length === 0 ? (
+        <EmptyState icon={Calendar} title="本月還沒有排程" desc="點「新增」安排上架或宣傳時間" />
+      ) : (
+        monthEvents.map(ev => {
+          const brand = isBrandEvent(ev);
+          const c = brand ? HIGHLIGHT_PALETTE[(ev.colorIndex || 0) % HIGHLIGHT_PALETTE.length] : scheduleCatColor(ev.category);
+          const d = new Date(ev.date);
+          return (
+            <div key={ev.id} onClick={() => openEditEvent(ev)} style={{
+              display: "flex", alignItems: "center", gap: 10,
+              background: brand ? c.bg : TOKENS.white, borderRadius: 10,
+              border: `1.5px solid ${brand ? "transparent" : TOKENS.line}`,
+              padding: "9px 12px", marginBottom: 7, cursor: "pointer",
+            }}>
+              <div style={{
+                fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, fontWeight: 700,
+                color: brand ? c.fg : TOKENS.inkSoft,
+                width: 30, textAlign: "center", flexShrink: 0,
+              }}>
+                {pad2(d.getDate())}<br /><span style={{ fontWeight: 400, fontSize: 10 }}>{WEEKDAYS[d.getDay()]}</span>
+              </div>
+              {!brand && <span style={{ width: 7, height: 7, borderRadius: "50%", background: c.color, flexShrink: 0 }} />}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 13.5, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", color: brand ? c.fg : TOKENS.ink }}>
+                  {ev.title || "（未命名）"}
+                </div>
+                {ev.endDate && ev.endDate !== ev.date && (
+                  <div style={{ fontSize: 11, color: brand ? c.fg : TOKENS.inkSoft, opacity: 0.8, marginTop: 1 }}>
+                    {ev.date} ～ {ev.endDate}
+                  </div>
+                )}
+                {ev.note && <div style={{ fontSize: 11.5, color: brand ? c.fg : TOKENS.inkSoft, opacity: 0.85, marginTop: 1 }}>{ev.note}</div>}
+              </div>
+              {!brand && <Pill bg={c.bg} fg={c.color}>{ev.category}</Pill>}
+            </div>
+          );
+        })
+      )}
+
+      {dayModal && (
+        <Modal title={dayModal} onClose={() => setDayModal(null)}>
+          {(eventsByDate[dayModal] || []).length === 0 ? (
+            <div style={{ fontSize: 13, color: TOKENS.inkSoft, marginBottom: 14 }}>這天還沒有安排事項</div>
+          ) : (
+            (eventsByDate[dayModal] || []).map(ev => {
+              const brand = isBrandEvent(ev);
+              const c = brand ? HIGHLIGHT_PALETTE[(ev.colorIndex || 0) % HIGHLIGHT_PALETTE.length] : scheduleCatColor(ev.category);
+              return (
+                <div key={ev.id} style={{
+                  display: "flex", justifyContent: "space-between", alignItems: "center",
+                  background: brand ? c.bg : TOKENS.white,
+                  border: `1.5px solid ${brand ? "transparent" : TOKENS.line}`, borderRadius: 10,
+                  padding: "9px 12px", marginBottom: 8,
+                }}>
+                  <div>
+                    <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                      {!brand && <span style={{ width: 7, height: 7, borderRadius: "50%", background: c.color }} />}
+                      <span style={{ fontWeight: 600, fontSize: 13.5, color: brand ? c.fg : TOKENS.ink }}>{ev.title}</span>
+                    </div>
+                    {ev.endDate && ev.endDate !== ev.date && (
+                      <div style={{ fontSize: 11, color: c.fg, opacity: 0.8, marginTop: 2 }}>{ev.date} ～ {ev.endDate}</div>
+                    )}
+                    {ev.note && <div style={{ fontSize: 11.5, color: brand ? c.fg : TOKENS.inkSoft, opacity: 0.85, marginTop: 2 }}>{ev.note}</div>}
+                  </div>
+                  <div style={{ display: "flex", gap: 6 }}>
+                    <button onClick={() => openEditEvent(ev)} style={{ background: "none", border: "none", cursor: "pointer" }}>
+                      <Pencil size={14} color={brand ? c.fg : TOKENS.inkSoft} />
+                    </button>
+                    <button onClick={() => remove(ev.id)} style={{ background: "none", border: "none", cursor: "pointer" }}>
+                      <Trash2 size={14} color={TOKENS.stamp} />
+                    </button>
+                  </div>
+                </div>
+              );
+            })
+          )}
+          <Button onClick={() => openNewEvent(dayModal)} style={{ width: "100%", justifyContent: "center" }}>
+            <Plus size={15} /> 在這天新增事項
+          </Button>
+        </Modal>
+      )}
+
+      {formOpen && (
+        <Modal title={editing ? "編輯事項" : "新增事項"} onClose={() => setFormOpen(false)}>
+          <ScheduleEventForm initial={editing} defaultDate={pendingDate} brandEventCount={brandEventCount} onSave={save} onCancel={() => setFormOpen(false)} />
+        </Modal>
+      )}
+    </div>
+  );
+}
+
+/* ============================================================
+   主程式 App
+   ============================================================ */
+const TABS = [
+  { key: "dashboard", label: "總覽", icon: LayoutGrid },
+  { key: "orders", label: "訂單", icon: Package },
+  { key: "batches", label: "批次", icon: Layers },
+  { key: "quotes", label: "報價", icon: Stamp },
+  { key: "schedule", label: "行程", icon: Calendar },
+  { key: "expenses", label: "支出", icon: Receipt },
+  { key: "weights", label: "重量", icon: Scale },
+  { key: "summary", label: "損益", icon: TrendingUp },
+];
+
+function App() {
+  const [loaded, setLoaded] = useState(false);
+  const [tab, setTab] = useState("dashboard");
+  const [orders, setOrders] = useState([]);
+  const [batches, setBatches] = useState([]);
+  const [weights, setWeights] = useState(DEFAULT_WEIGHTS);
+  const [expenses, setExpenses] = useState([]);
+  const [quoteItems, setQuoteItems] = useState([]);
+  const [quoteSettings, setQuoteSettings] = useState(DEFAULT_QUOTE_SETTINGS);
+  const [scheduleEvents, setScheduleEvents] = useState([]);
+  const [arrivalStatuses, setArrivalStatuses] = useState(DEFAULT_ARRIVAL_STATUSES);
+  const [saveErr, setSaveErr] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      const [o, b, w, e, qi, qs, se, as_] = await Promise.all([
+        loadKey("orders", []),
+        loadKey("batches", []),
+        loadKey("weights", DEFAULT_WEIGHTS),
+        loadKey("expenses", []),
+        loadKey("quoteItems", []),
+        loadKey("quoteSettings", DEFAULT_QUOTE_SETTINGS),
+        loadKey("scheduleEvents", []),
+        loadKey("arrivalStatuses", DEFAULT_ARRIVAL_STATUSES),
+      ]);
+      setOrders(o); setBatches(b); setWeights(w); setExpenses(e);
+      setQuoteItems(qi); setQuoteSettings(qs); setScheduleEvents(se);
+      setArrivalStatuses(as_);
+      setLoaded(true);
+    })();
+  }, []);
+
+  useEffect(() => { if (loaded) saveKey("orders", orders).catch(() => setSaveErr(true)); }, [orders, loaded]);
+  useEffect(() => { if (loaded) saveKey("batches", batches).catch(() => setSaveErr(true)); }, [batches, loaded]);
+  useEffect(() => { if (loaded) saveKey("weights", weights).catch(() => setSaveErr(true)); }, [weights, loaded]);
+  useEffect(() => { if (loaded) saveKey("expenses", expenses).catch(() => setSaveErr(true)); }, [expenses, loaded]);
+  useEffect(() => { if (loaded) saveKey("quoteItems", quoteItems).catch(() => setSaveErr(true)); }, [quoteItems, loaded]);
+  useEffect(() => { if (loaded) saveKey("quoteSettings", quoteSettings).catch(() => setSaveErr(true)); }, [quoteSettings, loaded]);
+  useEffect(() => { if (loaded) saveKey("scheduleEvents", scheduleEvents).catch(() => setSaveErr(true)); }, [scheduleEvents, loaded]);
+  useEffect(() => { if (loaded) saveKey("arrivalStatuses", arrivalStatuses).catch(() => setSaveErr(true)); }, [arrivalStatuses, loaded]);
+
+  if (!loaded) {
+    return (
+      <div style={{
+        minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center",
+        background: TOKENS.paper, fontFamily: "'Inter', sans-serif", color: TOKENS.inkSoft,
+      }}>
+        <style>{FONTS_IMPORT}</style>
+        <Loader2 size={20} style={{ marginRight: 8, animation: "spin 1s linear infinite" }} />
+        載入中...
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{
+      minHeight: "100vh", background: TOKENS.paper, fontFamily: "'Inter', sans-serif",
+      maxWidth: 480, margin: "0 auto", position: "relative",
+    }}>
+      <style>{FONTS_IMPORT}</style>
+      <div style={{ padding: "calc(env(safe-area-inset-top, 0px) + 14px) 14px 0" }}>
+        {tab === "dashboard" && <Dashboard orders={orders} batches={batches} expenses={expenses} setTab={setTab} />}
+        {tab === "orders" && <OrdersView orders={orders} setOrders={setOrders} batches={batches} weights={weights} statuses={arrivalStatuses} setStatuses={setArrivalStatuses} />}
+        {tab === "batches" && <BatchesView batches={batches} setBatches={setBatches} orders={orders} />}
+        {tab === "quotes" && <QuotesView items={quoteItems} setItems={setQuoteItems} quoteSettings={quoteSettings} setQuoteSettings={setQuoteSettings} />}
+        {tab === "schedule" && <ScheduleView events={scheduleEvents} setEvents={setScheduleEvents} />}
+        {tab === "expenses" && <ExpensesView expenses={expenses} setExpenses={setExpenses} />}
+        {tab === "weights" && <WeightsView weights={weights} setWeights={setWeights} />}
+        {tab === "summary" && <SummaryView orders={orders} batches={batches} expenses={expenses} />}
+      </div>
+
+      {saveErr && (
+        <div style={{
+          position: "fixed", bottom: 74, left: "50%", transform: "translateX(-50%)",
+          background: TOKENS.stamp, color: "#fff", padding: "6px 14px", borderRadius: 8, fontSize: 12,
+          maxWidth: 440, width: "calc(100% - 40px)", textAlign: "center", zIndex: 200,
+        }}>
+          儲存失敗，請檢查網路連線後再試一次
+        </div>
+      )}
+
+      <div style={{
+        position: "fixed", bottom: 0, left: "50%", transform: "translateX(-50%)",
+        width: "100%", maxWidth: 480, background: TOKENS.white,
+        borderTop: `1.5px solid ${TOKENS.line}`,
+        display: "flex", justifyContent: "space-around", padding: "8px 2px calc(env(safe-area-inset-bottom,0px) + 6px)",
+        zIndex: 90,
+      }}>
+        {TABS.map(t => {
+          const Icon = t.icon;
+          const active = tab === t.key;
+          return (
+            <button
+              key={t.key}
+              onClick={() => setTab(t.key)}
+              style={{
+                background: "none", border: "none", cursor: "pointer",
+                display: "flex", flexDirection: "column", alignItems: "center", gap: 2,
+                padding: "3px 2px", flex: 1,
+              }}
+            >
+              <Icon size={17} color={active ? TOKENS.stamp : TOKENS.inkSoft} strokeWidth={active ? 2.4 : 1.8} />
+              <span style={{
+                fontSize: 9.5, fontWeight: active ? 700 : 500,
+                color: active ? TOKENS.stamp : TOKENS.inkSoft,
+                fontFamily: "'Inter', sans-serif",
+              }}>{t.label}</span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+</script>
+
+<script>
+  window.addEventListener("error", function (e) {
+    var el = document.getElementById("boot-loading");
+    if (el && !el.classList.contains("hide")) {
+      el.innerHTML =
+        '<div style="color:#B23A2E;font-weight:600;padding:0 24px;text-align:center;">載入失敗，請確認網路連線後重新整理<br/><span style="font-size:11px;opacity:0.7;word-break:break-all;">' +
+        String(e.message || e).replace(/</g, "&lt;") +
+        "</span></div>";
+    }
+  });
+
+  window.storage = {
+    _NS: "kr_daigou_v1__",
+    get: function (key, shared) {
+      var self = this;
+      return Promise.resolve().then(function () {
+        try {
+          var raw = localStorage.getItem(self._NS + key);
+          if (raw === null) return null;
+          return { key: key, value: raw, shared: !!shared };
+        } catch (e) { return null; }
+      });
+    },
+    set: function (key, value, shared) {
+      var self = this;
+      return Promise.resolve().then(function () {
+        try {
+          localStorage.setItem(self._NS + key, value);
+          return { key: key, value: value, shared: !!shared };
+        } catch (e) { return null; }
+      });
+    },
+    delete: function (key, shared) {
+      var self = this;
+      return Promise.resolve().then(function () {
+        try {
+          localStorage.removeItem(self._NS + key);
+          return { key: key, deleted: true, shared: !!shared };
+        } catch (e) { return null; }
+      });
+    },
+    list: function (prefix, shared) {
+      var self = this;
+      return Promise.resolve().then(function () {
+        try {
+          var keys = [];
+          for (var i = 0; i < localStorage.length; i++) {
+            var k = localStorage.key(i);
+            if (k && k.indexOf(self._NS) === 0) {
+              var short = k.slice(self._NS.length);
+              if (!prefix || short.indexOf(prefix) === 0) keys.push(short);
+            }
+          }
+          return { keys: keys, prefix: prefix, shared: !!shared };
+        } catch (e) { return null; }
+      });
+    },
+  };
+
+  try {
+    var src = document.getElementById("app-source").textContent;
+    var compiled = Babel.transform(src, { presets: ["react"], filename: "app.jsx" }).code;
+    (0, eval)(compiled);
+    ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(App));
+    document.getElementById("boot-loading").classList.add("hide");
+  } catch (err) {
+    console.error(err);
+    var el = document.getElementById("boot-loading");
+    el.innerHTML =
+      '<div style="color:#B23A2E;font-weight:600;padding:0 24px;text-align:center;">程式載入失敗<br/><span style="font-size:11px;opacity:0.7;word-break:break-all;">' +
+      (err && err.message ? String(err.message).replace(/</g, "&lt;") : "unknown error") +
+      "</span></div>";
+  }
+</script>
+</body>
+</html>
