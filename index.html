@@ -7,20 +7,20 @@
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <meta name="apple-mobile-web-app-title" content="代購總帳" />
-<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%23161F2E'/%3E%3Ccircle cx='50' cy='50' r='30' fill='none' stroke='%23B23A2E' stroke-width='5'/%3E%3Ctext x='50' y='58' font-size='22' text-anchor='middle' fill='%23B23A2E' font-family='monospace' font-weight='700'%3E韓%3C/text%3E%3C/svg%3E" />
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%23161F2E'/%3E%3Ccircle cx='50' cy='50' r='30' fill='none' stroke='%23B23A2E' stroke-width='5'/%3E%3Ctext x='50' y='58' font-size='22' text-anchor='middle' fill='%23B23A2E' font-family='monospace' font-weight='700'%3E韓%3C/text%3E%3C/svg%3E" />
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%23111111'/%3E%3Ccircle cx='50' cy='50' r='30' fill='none' stroke='%23111111' stroke-width='5'/%3E%3Ctext x='50' y='58' font-size='22' text-anchor='middle' fill='%23111111' font-family='monospace' font-weight='700'%3E韓%3C/text%3E%3C/svg%3E" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%23111111'/%3E%3Ccircle cx='50' cy='50' r='30' fill='none' stroke='%23111111' stroke-width='5'/%3E%3Ctext x='50' y='58' font-size='22' text-anchor='middle' fill='%23111111' font-family='monospace' font-weight='700'%3E韓%3C/text%3E%3C/svg%3E" />
 <style>
-  html, body { margin: 0; padding: 0; background: #F6F3EC; overflow-x: hidden; }
+  html, body { margin: 0; padding: 0; background: #FAFAFA; overflow-x: hidden; }
   #root { min-height: 100vh; }
   #boot-loading {
     position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
-    background: #F6F3EC; font-family: -apple-system, sans-serif; color: #3A4658; font-size: 14px;
+    background: #FAFAFA; font-family: -apple-system, sans-serif; color: #5C5C5C; font-size: 14px;
     flex-direction: column; gap: 10px; z-index: 9999;
   }
   #boot-loading.hide { display: none; }
   .boot-spinner {
     width: 26px; height: 26px; border-radius: 50%;
-    border: 3px solid #D8D2BF; border-top-color: #B23A2E;
+    border: 3px solid #D6D6D6; border-top-color: #111111;
     animation: spin 0.8s linear infinite;
   }
   @keyframes spin { to { transform: rotate(360deg); } }
@@ -68,6 +68,8 @@ const Loader2 = (p) => <Icon {...p}><path d="M21 12a9 9 0 1 1-6.219-8.56" /></Ic
 const Calendar = (p) => <Icon {...p}><path d="M8 2v4" /><path d="M16 2v4" /><path d="M3 10h18" /><rect x="3" y="4" width="18" height="18" rx="2" /></Icon>;
 const ChevronLeft = (p) => <Icon {...p}><path d="M15 18l-6-6 6-6" /></Icon>;
 const ChevronRight = (p) => <Icon {...p}><path d="M9 18l6-6-6-6" /></Icon>;
+const Copy = (p) => <Icon {...p}><rect x="9" y="9" width="13" height="13" rx="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></Icon>;
+const ClipboardCheck = (p) => <Icon {...p}><rect x="8" y="2" width="8" height="4" rx="1" /><path d="M9 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2h-2" /><path d="m9 14 2 2 4-4" /></Icon>;
 
 /* ============================================================
    설계 노트 / 設計筆記
@@ -79,34 +81,23 @@ const ChevronRight = (p) => <Icon {...p}><path d="M9 18l6-6-6-6" /></Icon>;
    ============================================================ */
 
 const TOKENS = {
-  ink: "#161F2E",
-  inkSoft: "#3A4658",
-  paper: "#F6F3EC",
-  paperDeep: "#EDE8DA",
-  line: "#D8D2BF",
-  stamp: "#B23A2E",
-  stampSoft: "#F1DDD8",
-  sage: "#3F6B52",
-  sageSoft: "#DCE7DE",
-  gold: "#B3812E",
-  goldSoft: "#F1E4CB",
+  ink: "#111111",
+  inkSoft: "#5C5C5C",
+  paper: "#FAFAFA",
+  paperDeep: "#EBEBEB",
+  line: "#D6D6D6",
+  stamp: "#111111",
+  stampSoft: "#E0E0E0",
+  sage: "#3A3A3A",
+  sageSoft: "#EDEDED",
+  gold: "#5A5A5A",
+  goldSoft: "#E6E6E6",
   white: "#FFFFFF",
 };
 
 const FONTS_IMPORT = `@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap');`;
 
 const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
-
-const DEFAULT_WEIGHTS = [
-  { id: uid(), category: "上衣", kg: 0.5 },
-  { id: uid(), category: "褲子", kg: 1.0 },
-  { id: uid(), category: "外套", kg: 0.8 },
-  { id: uid(), category: "帽子", kg: 0.3 },
-  { id: uid(), category: "包包", kg: 0.6 },
-  { id: uid(), category: "鞋子", kg: 1.2 },
-  { id: uid(), category: "配件/飾品", kg: 0.2 },
-  { id: uid(), category: "其他", kg: 0.5 },
-];
 
 const CALL_STATUS = ["未叫", "已叫"];
 const DEFAULT_ARRIVAL_STATUSES = [
@@ -129,6 +120,60 @@ function arrivalColorFor(label, statuses) {
 
 const EXPENSE_CATS = ["包材", "廣告", "淘宝", "運費", "其他"];
 
+const DEFAULT_TEMPLATES = [
+  {
+    id: uid(),
+    title: "已寄出通知",
+    content: "尼好商品已經寄出囉🕯️\n部分密封商品有拆開確認內容物是否正確🎼\n喜歡的話歡迎拍照分享\n限時分享標註我們並出示截圖 下次購買可享免運優惠\n謝謝尼的信任 希望下次還能為你服務〜🎵",
+  },
+  {
+    id: uid(),
+    title: "確認收到匯款",
+    content: "已收到款項🎵\n再麻煩提供尼的姓名/電話/711取貨超商",
+  },
+  {
+    id: uid(),
+    title: "確認下單付款方式",
+    content: "好的沒問題🕯️\n確認下單幫我匯款至 (013) 011506218367 匯款完成就歐虧囉",
+  },
+  {
+    id: uid(),
+    title: "新品優惠通知",
+    content: "新品限時85折〜\n私訊官方LINE下單",
+  },
+  {
+    id: uid(),
+    title: "Pre-Order",
+    content: "Pre-Oder",
+  },
+];
+
+async function copyToClipboard(text) {
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+    throw new Error("no clipboard api");
+  } catch (e) {
+    try {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+      return true;
+    } catch (e2) {
+      return false;
+    }
+  }
+}
+
+
 const SCHEDULE_CATS = [
   { key: "上架", color: TOKENS.sage, bg: TOKENS.sageSoft },
   { key: "宣傳", color: TOKENS.stamp, bg: TOKENS.stampSoft },
@@ -140,9 +185,9 @@ const scheduleCatColor = (key) => SCHEDULE_CATS.find(c => c.key === key) || SCHE
 
 // 品牌活動跨日反白用的螢光筆色票，依建立順序輪流指派
 const HIGHLIGHT_PALETTE = [
-  { bg: "#F5E28C", fg: "#6B5200" }, // 螢光黃
-  { bg: "#F3C6D9", fg: "#8A3358" }, // 螢光粉
-  { bg: "#BFE3C8", fg: "#2F6B45" }, // 螢光綠
+  { bg: "#E2E2E2", fg: "#1A1A1A" }, // 淺灰
+  { bg: "#C4C4C4", fg: "#111111" }, // 中灰
+  { bg: "#A6A6A6", fg: "#0A0A0A" }, // 深灰
 ];
 const isBrandEvent = (ev) => ev.category === "品牌活動";
 function dateRangeArray(startISO, endISO) {
@@ -399,7 +444,7 @@ function EmptyState({ icon: Icon, title, desc }) {
 /* ============================================================
    Dashboard
    ============================================================ */
-function Dashboard({ orders, batches, expenses, setTab }) {
+function Dashboard({ orders, batches, expenses, setTab, onExport, onImportFile, importMsg }) {
   const batchMap = useMemo(() => Object.fromEntries(batches.map(b => [b.id, b])), [batches]);
 
   const stats = useMemo(() => {
@@ -470,7 +515,7 @@ function Dashboard({ orders, batches, expenses, setTab }) {
         <Row label="營收（客人售價）" value={stats.revenue} />
         <Row label="商品+物流成本" value={-stats.cost} />
         <Row label="賣場支出（包材/廣告等）" value={-stats.expenseTotal} />
-        <div style={{ height: 1, background: "rgba(246,243,236,0.2)", margin: "10px 0" }} />
+        <div style={{ height: 1, background: "rgba(255,255,255,0.2)", margin: "10px 0" }} />
         <Row label="淨利" value={stats.netProfit} bold />
       </div>
 
@@ -496,6 +541,38 @@ function Dashboard({ orders, batches, expenses, setTab }) {
           })}
         </div>
       )}
+
+      <SectionLabel>資料備份</SectionLabel>
+      <div style={{
+        background: TOKENS.white, borderRadius: 12, border: `1.5px solid ${TOKENS.line}`,
+        padding: 14, marginBottom: 10,
+      }}>
+        <div style={{ display: "flex", gap: 10 }}>
+          <Button variant="ghost" onClick={onExport} style={{ flex: 1, justifyContent: "center" }}>
+            匯出備份
+          </Button>
+          <label style={{
+            flex: 1, padding: "9px 16px", borderRadius: 8, fontSize: 13.5, fontWeight: 600,
+            cursor: "pointer", fontFamily: "'Inter', sans-serif",
+            display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6,
+            background: "transparent", color: TOKENS.ink, border: `1.5px solid ${TOKENS.line}`,
+          }}>
+            匯入備份
+            <input
+              type="file" accept="application/json,.json" style={{ display: "none" }}
+              onChange={(e) => { const f = e.target.files && e.target.files[0]; if (f) onImportFile(f); e.target.value = ""; }}
+            />
+          </label>
+        </div>
+        {importMsg && (
+          <div style={{ fontSize: 12, marginTop: 8, fontWeight: 600, color: TOKENS.ink }}>
+            {importMsg.text}
+          </div>
+        )}
+        <div style={{ fontSize: 11, color: TOKENS.inkSoft, marginTop: 8, lineHeight: 1.5 }}>
+          建議定期匯出備份存到「檔案」App 裡；請我優化功能前，也建議先匯出一份，多一層保險。
+        </div>
+      </div>
     </div>
   );
 }
@@ -579,12 +656,11 @@ const DEFAULT_QUOTE_SETTINGS = {
 /* ============================================================
    訂單管理 Orders
    ============================================================ */
-function OrderForm({ initial, batches, weights, statuses, onSave, onCancel }) {
+function OrderForm({ initial, batches, statuses, onSave, onCancel }) {
   const [f, setF] = useState(initial || {
     orderDate: new Date().toISOString().slice(0, 10),
     customerName: "", contact: "LINE", lastFive: "",
-    itemDesc: "", category: weights[0]?.category || "其他",
-    weight: weights[0]?.kg || 0.5,
+    itemDesc: "", weight: 0.5,
     itemPriceKRW: "", batchId: batches[0]?.id || "",
     callStatus: "未叫", arrivalStatus: statuses[0]?.label || "",
     shippingFeeToCustomer: 60, sellPriceTWD: "", paidAmount: "",
@@ -596,11 +672,6 @@ function OrderForm({ initial, batches, weights, statuses, onSave, onCancel }) {
   const cost = computeCost(f, batch);
 
   const set = (k, v) => setF(prev => ({ ...prev, [k]: v }));
-
-  const onCategoryChange = (cat) => {
-    const w = weights.find(x => x.category === cat);
-    setF(prev => ({ ...prev, category: cat, weight: w ? w.kg : prev.weight }));
-  };
 
   return (
     <div>
@@ -623,16 +694,9 @@ function OrderForm({ initial, batches, weights, statuses, onSave, onCancel }) {
       <Field label="訂單內容">
         <TextInput value={f.itemDesc} onChange={e => set("itemDesc", e.target.value)} placeholder="例：Elf粉色連身裙" />
       </Field>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-        <Field label="商品類別（帶入預設重量）">
-          <Select value={f.category} onChange={e => onCategoryChange(e.target.value)}>
-            {weights.map(w => <option key={w.id} value={w.category}>{w.category}</option>)}
-          </Select>
-        </Field>
-        <Field label="重量 (kg)">
-          <TextInput type="number" step="0.1" value={f.weight} onChange={e => set("weight", e.target.value)} />
-        </Field>
-      </div>
+      <Field label="重量 (kg)">
+        <TextInput type="number" step="0.1" value={f.weight} onChange={e => set("weight", e.target.value)} />
+      </Field>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
         <Field label="商品韓幣金額">
           <TextInput type="number" value={f.itemPriceKRW} onChange={e => set("itemPriceKRW", e.target.value)} placeholder="28000" />
@@ -834,7 +898,7 @@ function StatusManageForm({ statuses, setStatuses }) {
   );
 }
 
-function OrdersView({ orders, setOrders, batches, weights, statuses, setStatuses }) {
+function OrdersView({ orders, setOrders, batches, statuses, setStatuses }) {
   const [modalOpen, setModalOpen] = useState(false);
   const [statusModalOpen, setStatusModalOpen] = useState(false);
   const [editing, setEditing] = useState(null);
@@ -911,7 +975,7 @@ function OrdersView({ orders, setOrders, batches, weights, statuses, setStatuses
 
       {modalOpen && (
         <Modal title={editing ? "編輯訂單" : "新增訂單"} onClose={() => setModalOpen(false)}>
-          <OrderForm initial={editing} batches={batches} weights={weights} statuses={statuses} onSave={save} onCancel={() => setModalOpen(false)} />
+          <OrderForm initial={editing} batches={batches} statuses={statuses} onSave={save} onCancel={() => setModalOpen(false)} />
         </Modal>
       )}
       {statusModalOpen && (
@@ -997,7 +1061,14 @@ function BatchesView({ batches, setBatches, orders }) {
         <EmptyState icon={Layers} title="尚未建立批次" desc="點右上角「新增」建立第一個批次" />
       ) : (
         batches.slice().reverse().map(b => {
-          const n = orders.filter(o => o.batchId === b.id).length;
+          const batchOrders = orders.filter(o => o.batchId === b.id);
+          const n = batchOrders.length;
+          let batchRevenue = 0, batchCost = 0;
+          for (const o of batchOrders) {
+            const p = orderProfit(o, b);
+            if (p) { batchRevenue += p.sell; batchCost += p.totalCostTWD; }
+          }
+          const batchNet = batchRevenue - batchCost;
           return (
             <div key={b.id} style={{
               background: TOKENS.white, borderRadius: 12, border: `1.5px solid ${TOKENS.line}`,
@@ -1025,6 +1096,17 @@ function BatchesView({ batches, setBatches, orders }) {
                   <span>運費 {fmt(b.intlShipPerKg)}/kg₩</span>
                   <span>關稅 {fmt(b.customsPerKgTWD)}/kg NT</span>
                 </div>
+                {n > 0 && (
+                  <div style={{
+                    display: "flex", justifyContent: "space-between", marginTop: 8, paddingTop: 8,
+                    borderTop: `1px dashed ${TOKENS.line}`,
+                    fontFamily: "'IBM Plex Mono', monospace", fontSize: 12,
+                  }}>
+                    <span style={{ color: TOKENS.inkSoft }}>營收 {fmt(batchRevenue)}</span>
+                    <span style={{ color: TOKENS.inkSoft }}>成本 {fmt(batchCost)}</span>
+                    <span style={{ fontWeight: 700, color: TOKENS.ink }}>淨利 {fmt(batchNet)}</span>
+                  </div>
+                )}
               </div>
             </div>
           );
@@ -1040,77 +1122,6 @@ function BatchesView({ batches, setBatches, orders }) {
   );
 }
 
-
-/* ============================================================
-   重量預設 Weights
-   ============================================================ */
-function WeightsView({ weights, setWeights }) {
-  const [modalOpen, setModalOpen] = useState(false);
-  const [editing, setEditing] = useState(null);
-  const [f, setF] = useState({ category: "", kg: "" });
-
-  const openNew = () => { setEditing(null); setF({ category: "", kg: "" }); setModalOpen(true); };
-  const openEdit = (w) => { setEditing(w); setF(w); setModalOpen(true); };
-  const save = () => {
-    if (!f.category) return;
-    if (editing) setWeights(prev => prev.map(w => w.id === editing.id ? { ...f, id: editing.id } : w));
-    else setWeights(prev => [...prev, { ...f, id: uid() }]);
-    setModalOpen(false);
-  };
-  const remove = (id) => setWeights(prev => prev.filter(w => w.id !== id));
-
-  return (
-    <div style={{ padding: "4px 4px 90px" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-        <div>
-          <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: TOKENS.stamp, letterSpacing: "0.1em" }}>
-            TARE WEIGHT · 重量
-          </div>
-          <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 22, color: TOKENS.ink }}>
-            商品重量預設
-          </div>
-        </div>
-        <Button variant="stamp" onClick={openNew}><Plus size={16} /> 新增</Button>
-      </div>
-      <div style={{ fontSize: 12.5, color: TOKENS.inkSoft, marginBottom: 14 }}>
-        新增訂單時選商品類別會自動帶入這裡的預設重量，特殊商品仍可手動覆蓋。
-      </div>
-
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-        {weights.map(w => (
-          <div key={w.id} style={{
-            background: TOKENS.white, borderRadius: 10, border: `1.5px solid ${TOKENS.line}`, padding: 12,
-            display: "flex", justifyContent: "space-between", alignItems: "center",
-          }}>
-            <div>
-              <div style={{ fontWeight: 600, fontSize: 13.5 }}>{w.category}</div>
-              <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 13, color: TOKENS.inkSoft }}>{w.kg} kg</div>
-            </div>
-            <div style={{ display: "flex", gap: 4 }}>
-              <button onClick={() => openEdit(w)} style={{ background: "none", border: "none", cursor: "pointer", padding: 3 }}>
-                <Pencil size={13} color={TOKENS.inkSoft} />
-              </button>
-              <button onClick={() => remove(w.id)} style={{ background: "none", border: "none", cursor: "pointer", padding: 3 }}>
-                <Trash2 size={13} color={TOKENS.stamp} />
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {modalOpen && (
-        <Modal title={editing ? "編輯類別" : "新增類別"} onClose={() => setModalOpen(false)}>
-          <Field label="商品類別"><TextInput value={f.category} onChange={e => setF({ ...f, category: e.target.value })} placeholder="例：洋裝" /></Field>
-          <Field label="預設重量 (kg)"><TextInput type="number" step="0.1" value={f.kg} onChange={e => setF({ ...f, kg: e.target.value })} /></Field>
-          <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
-            <Button onClick={save} style={{ flex: 1, justifyContent: "center" }}><Check size={15} /> 儲存</Button>
-            <Button variant="ghost" onClick={() => setModalOpen(false)}>取消</Button>
-          </div>
-        </Modal>
-      )}
-    </div>
-  );
-}
 
 /* ============================================================
    支出流水帳 Expenses
@@ -1212,8 +1223,119 @@ function ExpensesView({ expenses, setExpenses }) {
 
 
 /* ============================================================
-   商品報價表 Quotes
+   訊息模板 Templates
    ============================================================ */
+function TemplateForm({ initial, onSave, onCancel }) {
+  const [f, setF] = useState(initial || { title: "", content: "" });
+  const set = (k, v) => setF(prev => ({ ...prev, [k]: v }));
+  return (
+    <div>
+      <Field label="模板名稱">
+        <TextInput value={f.title} onChange={e => set("title", e.target.value)} placeholder="例：已寄出通知" />
+      </Field>
+      <Field label="內容">
+        <textarea
+          value={f.content} onChange={e => set("content", e.target.value)}
+          rows={6}
+          style={{ ...inputStyle, resize: "vertical", fontFamily: "'Inter', sans-serif", lineHeight: 1.6 }}
+          placeholder="輸入常用回覆文字"
+        />
+      </Field>
+      <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
+        <Button onClick={() => onSave(f)} style={{ flex: 1, justifyContent: "center" }}><Check size={15} /> 儲存模板</Button>
+        <Button variant="ghost" onClick={onCancel}>取消</Button>
+      </div>
+    </div>
+  );
+}
+
+function TemplatesView({ templates, setTemplates }) {
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editing, setEditing] = useState(null);
+  const [copiedId, setCopiedId] = useState(null);
+
+  const openNew = () => { setEditing(null); setModalOpen(true); };
+  const openEdit = (t) => { setEditing(t); setModalOpen(true); };
+  const save = (f) => {
+    if (editing) setTemplates(prev => prev.map(t => t.id === editing.id ? { ...f, id: editing.id } : t));
+    else setTemplates(prev => [...prev, { ...f, id: uid() }]);
+    setModalOpen(false);
+  };
+  const remove = (id) => setTemplates(prev => prev.filter(t => t.id !== id));
+
+  const handleCopy = async (t) => {
+    const ok = await copyToClipboard(t.content);
+    if (ok) {
+      setCopiedId(t.id);
+      setTimeout(() => setCopiedId(prev => (prev === t.id ? null : prev)), 1500);
+    } else {
+      window.alert("複製失敗，請手動選取文字複製");
+    }
+  };
+
+  return (
+    <div style={{ padding: "4px 4px 90px" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+        <div>
+          <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: TOKENS.stamp, letterSpacing: "0.1em" }}>
+            REPLY SCRIPTS · 模板
+          </div>
+          <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 22, color: TOKENS.ink }}>
+            訊息模板
+          </div>
+        </div>
+        <Button variant="stamp" onClick={openNew}><Plus size={16} /> 新增</Button>
+      </div>
+      <div style={{ fontSize: 12.5, color: TOKENS.inkSoft, marginBottom: 14 }}>
+        常用回覆文字，點「複製」直接貼到 LINE / IG，不用再手動選取。
+      </div>
+
+      {templates.length === 0 ? (
+        <EmptyState icon={Copy} title="還沒有模板" desc="點右上角「新增」建立第一個常用回覆" />
+      ) : (
+        templates.map(t => (
+          <div key={t.id} style={{
+            background: TOKENS.white, borderRadius: 12, border: `1.5px solid ${TOKENS.line}`,
+            padding: 13, marginBottom: 10,
+          }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
+              <div style={{ fontWeight: 700, fontSize: 14.5, fontFamily: "'Space Grotesk', sans-serif" }}>{t.title || "（未命名）"}</div>
+              <div style={{ display: "flex", gap: 6 }}>
+                <button onClick={() => openEdit(t)} style={{ background: "none", border: "none", cursor: "pointer", padding: 3 }}>
+                  <Pencil size={14} color={TOKENS.inkSoft} />
+                </button>
+                <button onClick={() => remove(t.id)} style={{ background: "none", border: "none", cursor: "pointer", padding: 3 }}>
+                  <Trash2 size={14} color={TOKENS.stamp} />
+                </button>
+              </div>
+            </div>
+            <div style={{
+              fontSize: 13, color: TOKENS.inkSoft, whiteSpace: "pre-wrap", lineHeight: 1.6,
+              marginBottom: 10, background: TOKENS.paperDeep, borderRadius: 8, padding: "8px 10px",
+            }}>
+              {t.content}
+            </div>
+            <Button
+              variant={copiedId === t.id ? "primary" : "ghost"}
+              onClick={() => handleCopy(t)}
+              style={{ width: "100%", justifyContent: "center" }}
+            >
+              {copiedId === t.id ? (<><ClipboardCheck size={15} /> 已複製</>) : (<><Copy size={15} /> 複製</>)}
+            </Button>
+          </div>
+        ))
+      )}
+
+      {modalOpen && (
+        <Modal title={editing ? "編輯模板" : "新增模板"} onClose={() => setModalOpen(false)}>
+          <TemplateForm initial={editing} onSave={save} onCancel={() => setModalOpen(false)} />
+        </Modal>
+      )}
+    </div>
+  );
+}
+
+
 function QuoteSettingsForm({ settings, onSave, onCancel }) {
   const [f, setF] = useState(JSON.parse(JSON.stringify(settings)));
   const setTier = (i, k, v) => {
@@ -1490,6 +1612,55 @@ function QuotesView({ items, setItems, quoteSettings, setQuoteSettings }) {
 /* ============================================================
    收支總結 Summary
    ============================================================ */
+function TrendChart({ monthly }) {
+  const chronological = monthly.slice(0, 6).slice().reverse();
+  if (chronological.length === 0) {
+    return (
+      <div style={{ fontSize: 12, color: TOKENS.inkSoft, marginBottom: 18 }}>
+        還沒有足夠資料可以畫趨勢圖
+      </div>
+    );
+  }
+  const nets = chronological.map(([, v]) => v.revenue - v.cost - v.expense);
+  const maxAbs = Math.max(1, ...nets.map(n => Math.abs(n)));
+  return (
+    <div style={{
+      display: "flex", alignItems: "flex-end", gap: 8, height: 140, marginBottom: 20,
+      padding: "10px 4px 0", background: TOKENS.white, borderRadius: 12, border: `1.5px solid ${TOKENS.line}`,
+    }}>
+      {chronological.map(([month], i) => {
+        const net = nets[i];
+        const positive = net >= 0;
+        const h = Math.max(4, (Math.abs(net) / maxAbs) * 84);
+        return (
+          <div key={month} style={{
+            flex: 1, display: "flex", flexDirection: "column", alignItems: "center",
+            justifyContent: "flex-end", height: "100%",
+          }}>
+            <div style={{
+              fontSize: 9, fontFamily: "'IBM Plex Mono', monospace", color: TOKENS.inkSoft,
+              marginBottom: 4, whiteSpace: "nowrap",
+            }}>
+              {positive ? "" : "-"}{fmt(Math.abs(net))}
+            </div>
+            <div style={{
+              width: "70%", height: h, borderRadius: "4px 4px 0 0",
+              background: positive ? TOKENS.ink : "transparent",
+              border: positive ? "none" : `1.5px dashed ${TOKENS.inkSoft}`,
+            }} />
+            <div style={{
+              fontSize: 9.5, color: TOKENS.inkSoft, marginTop: 6,
+              fontFamily: "'IBM Plex Mono', monospace",
+            }}>
+              {month === "未分類" ? "—" : `${Number(month.slice(5))}月`}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function SummaryView({ orders, batches, expenses }) {
   const batchMap = useMemo(() => Object.fromEntries(batches.map(b => [b.id, b])), [batches]);
 
@@ -1533,18 +1704,21 @@ function SummaryView({ orders, batches, expenses }) {
         <Row label="總營收" value={grand.revenue} />
         <Row label="商品+物流成本" value={-grand.cost} />
         <Row label="賣場支出" value={-grand.expense} />
-        <div style={{ height: 1, background: "rgba(246,243,236,0.2)", margin: "10px 0" }} />
+        <div style={{ height: 1, background: "rgba(255,255,255,0.2)", margin: "10px 0" }} />
         <Row label="淨利" value={grandNet} bold />
         {grandNet >= 0 ? (
           <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11.5, opacity: 0.75, marginTop: 8 }}>
             <TrendingUp size={13} /> 目前整體獲利
           </div>
         ) : (
-          <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11.5, opacity: 0.75, marginTop: 8, color: "#E8A9A2" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11.5, opacity: 0.9, marginTop: 8, color: "#FFFFFF", fontWeight: 700 }}>
             <TrendingDown size={13} /> 目前整體虧損
           </div>
         )}
       </div>
+
+      <SectionLabel>近半年淨利趨勢</SectionLabel>
+      <TrendChart monthly={monthly} />
 
       <SectionLabel>按月份</SectionLabel>
       {monthly.length === 0 ? (
@@ -1895,8 +2069,8 @@ const TABS = [
   { key: "batches", label: "批次", icon: Layers },
   { key: "quotes", label: "報價", icon: Stamp },
   { key: "schedule", label: "行程", icon: Calendar },
+  { key: "templates", label: "模板", icon: Copy },
   { key: "expenses", label: "支出", icon: Receipt },
-  { key: "weights", label: "重量", icon: Scale },
   { key: "summary", label: "損益", icon: TrendingUp },
 ];
 
@@ -1905,41 +2079,89 @@ function App() {
   const [tab, setTab] = useState("dashboard");
   const [orders, setOrders] = useState([]);
   const [batches, setBatches] = useState([]);
-  const [weights, setWeights] = useState(DEFAULT_WEIGHTS);
   const [expenses, setExpenses] = useState([]);
   const [quoteItems, setQuoteItems] = useState([]);
   const [quoteSettings, setQuoteSettings] = useState(DEFAULT_QUOTE_SETTINGS);
   const [scheduleEvents, setScheduleEvents] = useState([]);
   const [arrivalStatuses, setArrivalStatuses] = useState(DEFAULT_ARRIVAL_STATUSES);
+  const [templates, setTemplates] = useState(DEFAULT_TEMPLATES);
   const [saveErr, setSaveErr] = useState(false);
 
   useEffect(() => {
     (async () => {
-      const [o, b, w, e, qi, qs, se, as_] = await Promise.all([
+      const [o, b, e, qi, qs, se, as_, tp] = await Promise.all([
         loadKey("orders", []),
         loadKey("batches", []),
-        loadKey("weights", DEFAULT_WEIGHTS),
         loadKey("expenses", []),
         loadKey("quoteItems", []),
         loadKey("quoteSettings", DEFAULT_QUOTE_SETTINGS),
         loadKey("scheduleEvents", []),
         loadKey("arrivalStatuses", DEFAULT_ARRIVAL_STATUSES),
+        loadKey("templates", DEFAULT_TEMPLATES),
       ]);
-      setOrders(o); setBatches(b); setWeights(w); setExpenses(e);
+      setOrders(o); setBatches(b); setExpenses(e);
       setQuoteItems(qi); setQuoteSettings(qs); setScheduleEvents(se);
-      setArrivalStatuses(as_);
+      setArrivalStatuses(as_); setTemplates(tp);
       setLoaded(true);
     })();
   }, []);
 
   useEffect(() => { if (loaded) saveKey("orders", orders).catch(() => setSaveErr(true)); }, [orders, loaded]);
   useEffect(() => { if (loaded) saveKey("batches", batches).catch(() => setSaveErr(true)); }, [batches, loaded]);
-  useEffect(() => { if (loaded) saveKey("weights", weights).catch(() => setSaveErr(true)); }, [weights, loaded]);
   useEffect(() => { if (loaded) saveKey("expenses", expenses).catch(() => setSaveErr(true)); }, [expenses, loaded]);
   useEffect(() => { if (loaded) saveKey("quoteItems", quoteItems).catch(() => setSaveErr(true)); }, [quoteItems, loaded]);
   useEffect(() => { if (loaded) saveKey("quoteSettings", quoteSettings).catch(() => setSaveErr(true)); }, [quoteSettings, loaded]);
   useEffect(() => { if (loaded) saveKey("scheduleEvents", scheduleEvents).catch(() => setSaveErr(true)); }, [scheduleEvents, loaded]);
   useEffect(() => { if (loaded) saveKey("arrivalStatuses", arrivalStatuses).catch(() => setSaveErr(true)); }, [arrivalStatuses, loaded]);
+  useEffect(() => { if (loaded) saveKey("templates", templates).catch(() => setSaveErr(true)); }, [templates, loaded]);
+
+  const [importMsg, setImportMsg] = useState(null);
+
+  const handleExport = () => {
+    try {
+      const payload = {
+        app: "kr-daigou", version: 1, exportedAt: new Date().toISOString(),
+        orders, batches, expenses, quoteItems, quoteSettings, scheduleEvents, arrivalStatuses, templates,
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      const stamp = new Date().toISOString().slice(0, 10);
+      a.href = url;
+      a.download = `代購總帳備份-${stamp}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      setImportMsg({ type: "success", text: "已匯出，請確認下載或分享視窗" });
+    } catch (err) {
+      setImportMsg({ type: "error", text: "匯出失敗，請稍後再試" });
+    }
+  };
+
+  const handleImportFile = (file) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = JSON.parse(String(e.target.result));
+        if (!data || typeof data !== "object") throw new Error("format");
+        if (!window.confirm("匯入將覆蓋目前所有資料，確定要繼續嗎？")) return;
+        setOrders(Array.isArray(data.orders) ? data.orders : []);
+        setBatches(Array.isArray(data.batches) ? data.batches : []);
+        setExpenses(Array.isArray(data.expenses) ? data.expenses : []);
+        setQuoteItems(Array.isArray(data.quoteItems) ? data.quoteItems : []);
+        setQuoteSettings(data.quoteSettings && typeof data.quoteSettings === "object" ? data.quoteSettings : DEFAULT_QUOTE_SETTINGS);
+        setScheduleEvents(Array.isArray(data.scheduleEvents) ? data.scheduleEvents : []);
+        setArrivalStatuses(Array.isArray(data.arrivalStatuses) ? data.arrivalStatuses : DEFAULT_ARRIVAL_STATUSES);
+        setTemplates(Array.isArray(data.templates) ? data.templates : DEFAULT_TEMPLATES);
+        setImportMsg({ type: "success", text: "匯入成功" });
+      } catch (err) {
+        setImportMsg({ type: "error", text: "匯入失敗，檔案格式不正確" });
+      }
+    };
+    reader.onerror = () => setImportMsg({ type: "error", text: "讀取檔案失敗" });
+    reader.readAsText(file);
+  };
 
   if (!loaded) {
     return (
@@ -1962,13 +2184,13 @@ function App() {
     }}>
       <style>{FONTS_IMPORT}</style>
       <div style={{ padding: "calc(env(safe-area-inset-top, 0px) + 14px) 14px 0" }}>
-        {tab === "dashboard" && <Dashboard orders={orders} batches={batches} expenses={expenses} setTab={setTab} />}
-        {tab === "orders" && <OrdersView orders={orders} setOrders={setOrders} batches={batches} weights={weights} statuses={arrivalStatuses} setStatuses={setArrivalStatuses} />}
+        {tab === "dashboard" && <Dashboard orders={orders} batches={batches} expenses={expenses} setTab={setTab} onExport={handleExport} onImportFile={handleImportFile} importMsg={importMsg} />}
+        {tab === "orders" && <OrdersView orders={orders} setOrders={setOrders} batches={batches} statuses={arrivalStatuses} setStatuses={setArrivalStatuses} />}
         {tab === "batches" && <BatchesView batches={batches} setBatches={setBatches} orders={orders} />}
         {tab === "quotes" && <QuotesView items={quoteItems} setItems={setQuoteItems} quoteSettings={quoteSettings} setQuoteSettings={setQuoteSettings} />}
         {tab === "schedule" && <ScheduleView events={scheduleEvents} setEvents={setScheduleEvents} />}
+        {tab === "templates" && <TemplatesView templates={templates} setTemplates={setTemplates} />}
         {tab === "expenses" && <ExpensesView expenses={expenses} setExpenses={setExpenses} />}
-        {tab === "weights" && <WeightsView weights={weights} setWeights={setWeights} />}
         {tab === "summary" && <SummaryView orders={orders} batches={batches} expenses={expenses} />}
       </div>
 
@@ -1999,14 +2221,15 @@ function App() {
               style={{
                 background: "none", border: "none", cursor: "pointer",
                 display: "flex", flexDirection: "column", alignItems: "center", gap: 2,
-                padding: "3px 2px", flex: 1,
+                padding: "3px 1px", flex: 1, minWidth: 0,
               }}
             >
               <Icon size={17} color={active ? TOKENS.stamp : TOKENS.inkSoft} strokeWidth={active ? 2.4 : 1.8} />
               <span style={{
-                fontSize: 9.5, fontWeight: active ? 700 : 500,
+                fontSize: 9, fontWeight: active ? 700 : 500,
                 color: active ? TOKENS.stamp : TOKENS.inkSoft,
                 fontFamily: "'Inter', sans-serif",
+                whiteSpace: "nowrap",
               }}>{t.label}</span>
             </button>
           );
@@ -2022,7 +2245,7 @@ function App() {
     var el = document.getElementById("boot-loading");
     if (el && !el.classList.contains("hide")) {
       el.innerHTML =
-        '<div style="color:#B23A2E;font-weight:600;padding:0 24px;text-align:center;">載入失敗，請確認網路連線後重新整理<br/><span style="font-size:11px;opacity:0.7;word-break:break-all;">' +
+        '<div style="color:#111111;font-weight:600;padding:0 24px;text-align:center;">載入失敗，請確認網路連線後重新整理<br/><span style="font-size:11px;opacity:0.7;word-break:break-all;">' +
         String(e.message || e).replace(/</g, "&lt;") +
         "</span></div>";
     }
@@ -2086,7 +2309,7 @@ function App() {
     console.error(err);
     var el = document.getElementById("boot-loading");
     el.innerHTML =
-      '<div style="color:#B23A2E;font-weight:600;padding:0 24px;text-align:center;">程式載入失敗<br/><span style="font-size:11px;opacity:0.7;word-break:break-all;">' +
+      '<div style="color:#111111;font-weight:600;padding:0 24px;text-align:center;">程式載入失敗<br/><span style="font-size:11px;opacity:0.7;word-break:break-all;">' +
       (err && err.message ? String(err.message).replace(/</g, "&lt;") : "unknown error") +
       "</span></div>";
   }
